@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
+    <title>Darts - Visits</title>
+    <link rel="stylesheet" href="./darts.css" />
+  </head>
+  <body>
+    
+    <div class="page-grid">
+      <aside class="sidebar">
+        <h2>Pages</h2>
+        <ul>
+          <li><a href="./legs.html">Play / Legs (default)</a></li>
+          <li><a href="./stats.html">Stats</a></li>
+          <li><a href="./players.html">Players</a></li>
+          <li><a href="./visits.html">Visits</a></li>
+        </ul>
+      </aside>
+
+      <main class="main-content">
+        <section>
+          <h1>Player's average visit</h1>
+          <pre id="averagesOutput">Loading…</pre>
+          <button id="refreshAverages">Refresh</button>
+        </section>
+
+        <section>
+          <h2>Legs</h2>
+          <pre id="legsOutput">Loading…</pre>
+          <button id="refreshLegs">Refresh</button>
+        </section>
+
+
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

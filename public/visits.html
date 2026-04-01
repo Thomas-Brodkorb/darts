@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
+    <title>Darts - Visits</title>
+    <link rel="stylesheet" href="./darts.css" />
+  </head>
+  <body>
+    <div class="page-grid">
+      <aside class="sidebar">
+        <h2>Pages</h2>
+        <ul>
+          <li><a href="./legs.html">Play / Legs (default)</a></li>
+          <li><a href="./stats.html">Stats</a></li>
+          <li><a href="./players.html">Players</a></li>
+          <li><a href="./visits.html">Visits</a></li>
+        </ul>
+      </aside>
+
+      <main class="main-content">
+        <h1>Darts: Visits in DB</h1>
+        <p>Use this page to inspect all visits in the database.</p>
+
+        <section>
+      <h2>Visits in DB</h2>
+      <button id="refreshVisits">Refresh visits</button>
+      <pre id="visitsOutput">Loading…</pre>
+    </section>
+
+    <script type="module" src="./visits.js"></script>
+      </main>
+    </div>
+  </body>
+</html>

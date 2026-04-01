@@ -1,0 +1,121 @@
+/* Shared Darts UI styles */
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 1024px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+label {
+  display: block;
+  margin: 8px 0 4px;
+}
+
+input,
+select,
+button {
+  padding: 8px 10px;
+  font-size: 1rem;
+}
+
+button {
+  margin-top: 10px;
+}
+
+pre {
+  background: #f4f4f4;
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.players-table,
+.legs-table,
+.visits-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.players-table th,
+.legs-table th,
+.visits-table th,
+.players-table td,
+.legs-table td,
+.visits-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+td.winner {
+  color: green;
+}
+
+.players-table th,
+.legs-table th,
+.visits-table th {
+  background-color: #f2f2f2;
+}
+
+.align-right td,
+.players-table td.align-right,
+.legs-table td.align-right,
+.visits-table td.align-right,
+input.align-right,
+select.align-right {
+  text-align: right;
+}
+
+/* Remove number input spinners (increment/decrement controls) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+#nextRound {
+  margin-top: 12px;
+}
+
+.page-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+.main-content {
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    margin-bottom: 16px;
+  }
+}

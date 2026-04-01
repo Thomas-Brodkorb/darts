@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
+    <title>Darts - Players</title>
+    <link rel="stylesheet" href="./darts.css" />
+  </head>
+  <body>
+    <div class="page-grid">
+      <aside class="sidebar">
+        <h2>Pages</h2>
+        <ul>
+          <li><a href="./legs.html">Play / Legs (default)</a></li>
+          <li><a href="./stats.html">Stats</a></li>
+          <li><a href="./players.html">Players</a></li>
+          <li><a href="./visits.html">Visits</a></li>
+        </ul>
+      </aside>
+
+      <main class="main-content">
+        <h1>Darts: Add a Player</h1>
+        <p>
+          Fill the form below and click <strong>Add player</strong>. The data will be sent as a
+          JSON object to the server, and the server will insert it into the <code>Players</code> table.
+        </p>
+
+        <form id="playerForm">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required />
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required />
+
+      <label for="score">Score</label>
+      <input id="score" name="score" type="number" min="0" required />
+
+      <button type="submit">Add player</button>
+    </form>
+
+    <section>
+      <h2>Players in DB</h2>
+      <button id="refresh">Refresh list</button>
+      <pre id="output">Loading…</pre>
+    </section>
+
+    <script type="module" src="./players.js"></script>
+      </main>
+    </div>
+  </body>
+</html>
