@@ -9,13 +9,7 @@ CREATE TABLE IF NOT EXISTS Players (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS Visits (
-  id serial PRIMARY KEY,
-  player_id integer NOT NULL references Players(id) on delete cascade,
-  leg_id integer references Legs(id) on delete set null,
-  value integer NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+
 
 CREATE TABLE IF NOT EXISTS Legs (
   id serial PRIMARY KEY,
@@ -24,5 +18,13 @@ CREATE TABLE IF NOT EXISTS Legs (
   "break" boolean NOT NULL,
   start_value integer NOT NULL,
   rounds integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS Visits (
+  id serial PRIMARY KEY,
+  player_id integer NOT NULL references Players(id) on delete cascade,
+  leg_id integer references Legs(id) on delete set null,
+  value integer NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );

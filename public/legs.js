@@ -111,7 +111,8 @@ function resetLeg() {
   player1Select.disabled = false
   player2Select.disabled = false
   startValueSelect.disabled = false
-  newLegButton.textContent = 'New leg'
+  newLegButton.textContent = 'New leg';
+  newLegButton.focus();
 
 
   // switch players
@@ -315,6 +316,11 @@ saveLegButton.addEventListener('click', async () => {
     payload.visits.push({ player_id: currentLeg.player1.id, value: playerOneSum })
     payload.visits.push({ player_id: currentLeg.player2.id, value: playerTwoSum })
   })
+
+  // if first players wins, second player does not throw for the last visit. Dont publish that visit.
+    if (!currentLeg.isBreak) {
+      payload.visits.pop();
+    }
 
   try {
     const res = await fetch('/api/legs', {
