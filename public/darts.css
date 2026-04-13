@@ -23,7 +23,8 @@ button {
   margin-top: 10px;
 }
 
-pre {
+pre, 
+canvas  {
   background: #f4f4f4;
   padding: 10px;
   overflow-x: auto;

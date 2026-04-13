@@ -10,6 +10,9 @@ app.use(express.json())
 
 // Serve the HTML + JS files from the public folder
 app.use(express.static('public'))
+// Serve the Chart.js package from node_modules for browser module imports
+app.use('/node_modules', express.static('node_modules'))
+// app.use(express.static('.'))
 
 // Example: GET all players
 app.get('/api/players', async (req, res) => {
@@ -58,6 +61,26 @@ app.get('/api/visits', async (req, res) => {
   } catch (error) {
     console.error('GET /api/visits error:', error)
     res.status(500).json({ error: 'Unable to fetch visits' })
+  }
+})
+
+app.get('/api/visit-averages', async (req, res) => {
+  try {
+    const averages = await sql`
+      select
+        concat(date_part('year', v.created_at), ' ', date_part('week', v.created_at)) as yearweek,
+        p.name,
+        avg(v.value) as value
+      from Visits v
+      join Players p on p.id = v.player_id
+      group by concat(date_part('year', v.created_at), ' ', date_part('week', v.created_at)), p.name
+      order by min(v.created_at) asc, p.name asc
+    `
+
+    res.json(averages)
+  } catch (error) {
+    console.error('GET /api/visit-averages error:', error)
+    res.status(500).json({ error: 'Unable to fetch visit averages' })
   }
 })
 

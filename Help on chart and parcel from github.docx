@@ -1,0 +1,41 @@
+## Short answer
+
+Yes — Chart.js is meant to be used both ways:
+
+- In a plain static app, the easiest approach is the UMD bundle (`chart.umd.min.js`), which is what you’re using now.
+- In a modern frontend setup, the intended way is with a bundler/service like Parcel, Vite, Webpack, etc., so you can write:
+  - `import Chart from 'chart.js/auto'`
+
+## Why your current project needed the UMD bundle
+
+Your Express app is just serving static files from public. The browser itself does not resolve `chart.js/auto` from node_modules. That’s why the bare-package import failed unless you use a bundler.
+
+## If you want Parcel
+
+Yes, you can adopt Parcel for this project. It will let you use npm package imports in browser code.
+
+### Rough path
+
+1. Install Parcel:
+   - `npm install --save-dev parcel`
+2. Keep chart.html with:
+   - `<script type="module" src="./chartvisits.js"></script>`
+3. In chartvisits.js, use:
+   - `import Chart from 'chart.js/auto'`
+4. Add scripts to package.json:
+   - `"dev": "parcel chart.html"`
+   - `"build": "parcel build chart.html --dist-dir public/dist"`
+5. For production, serve the Parcel build output from Express instead of raw public if needed.
+
+### What changes
+
+- Browser imports resolve package names via Parcel
+- You do not need manual node_modules static serving
+- Your frontend becomes bundle-based, while Express can continue handling API routes
+
+## Recommendation
+
+- If you want to stay minimal: keep the UMD bundle solution.
+- If you want cleaner module imports and future npm packages: add Parcel or Vite.
+
+If you want, I can also give you a concrete package.json + server.js setup for Parcel integration.
