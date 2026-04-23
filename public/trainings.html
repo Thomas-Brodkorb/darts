@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
+    <title>Darts - Trainings</title>
+    <link rel="stylesheet" href="./darts.css" />
+  </head>
+  <body>
+    <div class="page-grid">
+      <aside class="sidebar">
+        <h2>Pages</h2>
+        <ul>
+          <li><a href="./legs.html">Play / Legs (default)</a></li>
+          <li><a href="./trainings.html">Trainings</a></li>
+          <li><a href="./stats.html">Stats</a></li>
+          <li><a href="./players.html">Players</a></li>
+          <li><a href="./visits.html">Visits</a></li>
+        </ul>
+      </aside>
+
+      <main class="main-content">
+        <h1>Darts: Trainings</h1>
+
+        <div class="row">
+          <div>
+            <label for="startValue">Start value</label>
+            <select id="startValue" class="align-right" required>
+              <option value="">(Select start value)</option>
+              <option value="201">201</option>
+              <option value="301">301</option>
+              <option value="501">501</option>
+            </select>
+          </div>
+
+          <div>
+            <button id="newTraining">New training</button>
+            <button id="resetTraining" hidden>Reset training</button>
+          </div>
+
+          <div>
+            <button id="addPlayer">Add player</button>
+            <button id="removePlayer" disabled>Remove player</button>
+          </div>
+        </div>
+
+        <div id="playerSections" class="row"></div>
+
+        <section id="trainingSection" hidden>
+          <div id="trainingTables"></div>
+          <button id="nextRound" hidden>Next round</button>
+          <button id="saveTrainings" hidden>Save trainings</button>
+        </section>
+
+        <script type="module" src="./trainings.js"></script>
+      </main>
+    </div>
+  </body>
+</html>

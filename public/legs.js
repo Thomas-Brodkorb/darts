@@ -12,8 +12,10 @@ const player1Header = document.getElementById('player1Header')
 const player2Header = document.getElementById('player2Header')
 
 let currentLeg = null
+let allPlayers = []
 
 function setPlayers(players) {
+  allPlayers = players
   player1Select.innerHTML = '<option value="">(Select player)</option>'
   player2Select.innerHTML = '<option value="">(Select player)</option>'
 
@@ -27,6 +29,23 @@ function setPlayers(players) {
     opt2.value = player.id
     opt2.textContent = player.name
     player2Select.appendChild(opt2)
+  })
+}
+
+function updatePlayerOptions() {
+  const player1Selected = player1Select.value
+  const player2Selected = player2Select.value
+
+  allPlayers.forEach((player) => {
+    const player1Option = player1Select.querySelector(`option[value="${player.id}"]`)
+    const player2Option = player2Select.querySelector(`option[value="${player.id}"]`)
+
+    if (player1Option) {
+      player1Option.hidden = player2Selected === String(player.id)
+    }
+    if (player2Option) {
+      player2Option.hidden = player1Selected === String(player.id)
+    }
   })
 }
 
@@ -72,6 +91,18 @@ function createInputRow() {
   inputs.forEach((input) => {
     input.addEventListener('input', () => {
       updateInputRowLefts(row)
+    })
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return
+      event.preventDefault()
+      if (input.value.trim() === '') return
+      const inputsArray = Array.from(row.querySelectorAll('input'))
+      const currentIndex = inputsArray.indexOf(input)
+      if (currentIndex < inputsArray.length - 1) {
+        inputsArray[currentIndex + 1].focus()
+      } else {
+        nextRoundButton.focus()
+      }
     })
   })
 
@@ -345,4 +376,7 @@ saveLegButton.addEventListener('click', async () => {
 ;(async () => {
   const players = await fetchPlayers()
   setPlayers(players)
+  
+  player1Select.addEventListener('change', updatePlayerOptions)
+  player2Select.addEventListener('change', updatePlayerOptions)
 })()
