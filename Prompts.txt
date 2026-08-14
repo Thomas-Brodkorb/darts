@@ -1,0 +1,30 @@
+
+------------------
+Add trainings page
+------------------
+We need a new page called 'trainings'. The page allows multiple players to play a leg from a 
+startvalue simulateously. So we need a 'Start Value selector' the same as on the legs page.
+We also need a 'new training' button similar to the 'new leg' button on the legs page.
+To allow training for multiple players the page will start with the setup for one player and provide 
+two more buttons to 'add player' and 'remove player' to manage additional players. 
+The 'remove player' button is only enabled when more than one player is setup. 
+A setup for each player consists of a 'player selector' and a input enabled table that 
+will appear once the 'new training' button is clicked. 
+'New training' can only be clicked when a start value is selected and a player is selected 
+for every player section. The selected players need to be different.
+When 'New training' is clicked all player visit tables are created 
+and are input enabled. At the same time a button 'Reset training' will appear. The reset logic 
+is depicted below.
+The logic for input and calculation is the same as for the legs page.
+The cell focus will move from the first cell in the first table to the second and third cell of 
+the same table and then to the next table. Once the last cell in the last table is reached 
+the focus will move to a 'Next Round' button below all the tables. This button will 
+trigger the calculation and creating of the next table row.
+The difference to the legs page is that once one player reached a remaining value of exactly 0 
+the other players will continue playing. In the next round the cells of the player who 
+finished will be rendered not input enabled and will be excluded from the check that all cells
+in the row have to have numbers entered.
+When the last player reached exactly 0 the button 'Save trainings' is shown. Similar to the legs 
+page this button will save the visits to the data base and reset the page.
+Reset the page means the following. Remove the tables, enable player selections, enable 'add player'
+enable 'remove player' if more than one player is setup, enable 'start value selection', show 'new training'.

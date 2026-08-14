@@ -1,0 +1,20 @@
+Allow entering double and triple shots
+-) validate table input: 1..20,21,22,24,25,26,27,28,30,32,33,34,36,38,39,40,45,48,50,51,54,57,60,D1..D20,D25,T1..T20
+--) DONE for trainings
+--) to do for legs (a real game)
+-) change table layout to store strings as above
+-) change calculations
+
+Add visits for trainings
+
+add statistics on
+-) highest visit per
+--) day
+--) week
+--) month
+--) year
+-) highest finish
+--) day
+--) week-
+--) month
+--) year

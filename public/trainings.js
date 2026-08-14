@@ -1,4 +1,6 @@
-import { fetchPlayers, populatePlayerSelect } from './common.js'
+import { fetchPlayers, populatePlayerSelect } from './common.js';
+import { Dart } from './Dart.js';
+import { Visit } from './Visit.js';
 
 const maxPlayers = 4
 const startValueSelect = document.getElementById('startValue')
@@ -63,7 +65,7 @@ function refreshPlayerSelects() {
     populatePlayerSelect(select, players)
     select.value = currentValue || selectedValues[index] || ''
   })
-  
+
   updateTrainingPlayerOptions()
 }
 
@@ -210,54 +212,57 @@ function startTraining() {
     updateLiveRowLeft(trainingPlayer)
   })
 
+  setInputFocusHandling();
   focusFirstActiveInput()
 }
 
 function createLiveRow(trainingPlayer) {
-  const row = document.createElement('tr')
-  row.classList.add('live-row')
-  row.dataset.playerId = String(trainingPlayer.player.id)
+  const errorMessage = document.getElementById('errorMessage');
+  const goodMessage = document.getElementById('goodMessage');
 
-  for (let i = 0; i < 3; i += 1) {
-    const td = document.createElement('td')
-    const input = document.createElement('input')
-    input.type = 'number'
-    input.min = '0'
-    input.classList.add('align-right')
-    input.style.width = '80%'
-    input.addEventListener('input', () => updateLiveRowLeft(trainingPlayer))
-    input.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return
-      event.preventDefault()
-      if (input.value.trim() === '') return
-      const nextInput = getNextLiveInput(input)
-      if (nextInput) {
-        nextInput.focus()
-      } else {
-        nextRoundButton.focus()
-      }
+  const row = Visit.createInputRow(errorMessage, goodMessage, (visit) => {
+    if (!visit) return
+    trainingPlayer.liveRow.dataset.visit = JSON.stringify({
+      darts: visit.darts.map(dart => dart ? dart.value : null),
+      totalScore: visit.totalScore,
+      complete: visit.isComplete
     })
-    td.appendChild(input)
-    row.appendChild(td)
-  }
+    updateLiveRowLeft(trainingPlayer);
+  });
+  row.classList.add('live-row')
+  row.dataset.playerId = String(trainingPlayer.player.id);
 
   const leftTd = document.createElement('td')
   leftTd.classList.add('align-right')
+  leftTd.textContent = String(trainingPlayer.left);
   row.appendChild(leftTd)
 
-  return row
+  return row;
 }
 
 function updateLiveRowLeft(trainingPlayer) {
-  if (!trainingPlayer || !trainingPlayer.liveRow) return
+  if (!trainingPlayer || !trainingPlayer.liveRow) return;
+  const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
+  const sum = visitData ? visitData.totalScore : 0;
+  const leftCell = trainingPlayer.liveRow.children[3];
+  leftCell.textContent = trainingPlayer.left - sum;
+}
 
-  const inputs = Array.from(trainingPlayer.liveRow.querySelectorAll('input'))
-  const sum = inputs.reduce((acc, input) => {
-    const value = input.value.trim()
-    return acc + (value === '' ? 0 : Number(value))
-  }, 0)
-  const leftCell = trainingPlayer.liveRow.children[3]
-  leftCell.textContent = trainingPlayer.left - sum
+function setInputFocusHandling() {
+  const inputs = Array.from(trainingTables.querySelectorAll('tr.live-row input:not(:disabled)'))
+  inputs.forEach((input, index) => {
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        const nextInput = getNextLiveInput(input)
+        if (nextInput) {
+          nextInput.focus()
+        } else {
+          nextRoundButton.focus()
+        }
+      }
+    })
+  })
 }
 
 function getNextLiveInput(currentInput) {
@@ -303,51 +308,52 @@ function focusFirstActiveInput() {
 function startRound() {
   if (!currentTraining) return
 
-  const activePlayers = currentTraining.players.filter((trainingPlayer) => !trainingPlayer.isFinished)
-  const hasMissingValue = activePlayers.some((trainingPlayer) =>
-    Array.from(trainingPlayer.liveRow.querySelectorAll('input')).some((input) => input.value.trim() === '')
-  )
+  const activePlayers = currentTraining.players.filter((trainingPlayer) => !trainingPlayer.isFinished);
+
+  const hasMissingValue = activePlayers.some((trainingPlayer) => {
+    const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
+    return !visitData || !visitData.complete;
+  });
 
   if (hasMissingValue) {
     alert('Please fill in all dart values before proceeding to the next round.')
     return
   }
 
-  const invalidNumber = activePlayers.some((trainingPlayer) =>
-    Array.from(trainingPlayer.liveRow.querySelectorAll('input')).some((input) => Number.isNaN(Number(input.value)))
-  )
-
-  if (invalidNumber) {
-    alert('Please enter valid numbers for all dart values.')
-    return
-  }
 
   activePlayers.forEach((trainingPlayer) => {
-    const inputs = Array.from(trainingPlayer.liveRow.querySelectorAll('input'))
-    const values = inputs.map((input) => Number(input.value.trim()))
-    const roundSum = values.reduce((sum, value) => sum + value, 0)
+    const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
+    if (!visitData) return;
 
-    const newLeft = trainingPlayer.left - roundSum
-    const finalLeft = newLeft < 0 ? trainingPlayer.left : newLeft
+    const values = visitData.darts.map(dartValue => dartValue !== null ? Number(dartValue) : 0);
+    const roundSum = visitData.totalScore;
+
+    const newLeft = trainingPlayer.left - roundSum;
+    const finalLeft = newLeft < 0 ? trainingPlayer.left : newLeft;
 
     const displayRow = createDisplayRow([...values, finalLeft])
-    trainingPlayer.tbody.insertBefore(displayRow, trainingPlayer.liveRow)
+    trainingPlayer.tbody.insertBefore(displayRow, trainingPlayer.liveRow);
+    trainingPlayer.left = finalLeft;
+
+    trainingPlayer.liveRow.remove(); // Remove the old live row
+    trainingPlayer.liveRow = createLiveRow(trainingPlayer); // Recreate the live row for the next round
+    trainingPlayer.tbody.appendChild(trainingPlayer.liveRow); // Append the new live row
+
 
     trainingPlayer.roundsData.push({
       values,
       value: roundSum,
     })
 
-    trainingPlayer.left = finalLeft
 
     if (finalLeft === 0) {
       trainingPlayer.isFinished = true
       trainingPlayer.liveRow.remove()
     }
   })
-
   currentTraining.rounds += 1
 
+  setInputFocusHandling();
   if (currentTraining.players.every((trainingPlayer) => trainingPlayer.isFinished)) {
     nextRoundButton.hidden = true
     saveTrainingsButton.hidden = false
@@ -355,9 +361,9 @@ function startRound() {
     return
   }
 
-  clearActiveInputs()
   focusFirstActiveInput()
 }
+
 
 async function saveTrainings() {
   if (!currentTraining) return
@@ -403,9 +409,9 @@ nextRoundButton.addEventListener('click', startRound)
 saveTrainingsButton.addEventListener('click', saveTrainings)
 startValueSelect.addEventListener('change', updateNewTrainingButtonState)
 
-;(async () => {
-  players = await fetchPlayers()
-  createPlayerSection(1)
-  refreshPlayerSelects()
-  updatePlayerActionState()
-})()
+  ; (async () => {
+    players = await fetchPlayers()
+    createPlayerSection(1)
+    refreshPlayerSelects()
+    updatePlayerActionState()
+  })()
