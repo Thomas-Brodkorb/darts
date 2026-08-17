@@ -92,8 +92,7 @@ export class Dart {
         input.type = 'text';
         input.placeholder = 'dart (0, 20, D20, T20, 25, D25)';
         input.classList.add('align-right');
-        input.classList.add('input');
-        input.id = 'input';
+        input.classList.add('inputField');
         input.pattern = '^(D|T)?(\\d{1,2})$';
         input.addEventListener('input', (event) => {
             if (trace) console.log(`Input changed to: ${input.value}`);

@@ -1,85 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
-    <title>Darts - Play</title>
-    <link rel="stylesheet" href="./darts.css" />
-  </head>
-  <body>
-    <div class="page-grid">
-      <aside class="sidebar">
-        <h2>Pages</h2>
-        <ul>
-          <li><a href="./legs.html">Play / Legs (default)</a></li>
-          <li><a href="./trainings.html">Trainings</a></li>
-          <li><a href="./stats.html">Stats</a></li>
-          <li><a href="./players.html">Players</a></li>
-          <li><a href="./visits.html">Visits</a></li>
-        </ul>
-      </aside>
 
-      <main class="main-content">
-        <h1>Darts: Play</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="./pictures/Darts.JPG" sizes="32x32">
+  <title>Darts - Play</title>
+  <link rel="stylesheet" href="./darts.css" />
+</head>
 
-        <div class="row">
-      <div>
-        <label for="player1">Player 1</label>
-        <select id="player1" required>
-          <option value="">(Select player)</option>
-        </select>
+<body>
+  <div class="page-grid">
+    <aside class="sidebar">
+      <h2>Pages</h2>
+      <ul>
+        <li><a href="./legs.html">Play / Legs (default)</a></li>
+        <li><a href="./trainings.html">Trainings</a></li>
+        <li><a href="./stats.html">Stats</a></li>
+        <li><a href="./players.html">Players</a></li>
+        <li><a href="./visits.html">Visits</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h1>Darts: Play</h1>
+
+      <div class="row">
+        <div>
+          <label for="player1">Player 1</label>
+          <select id="player1" required>
+            <option value="">(Select player)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="player2">Player 2</label>
+          <select id="player2" required>
+            <option value="">(Select player)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="startValue">Start value</label>
+          <select id="startValue" class="align-right" required>
+            <option value="">(Select start value)</option>
+            <option value="201">201</option>
+            <option value="301">301</option>
+            <option value="501">501</option>
+          </select>
+        </div>
+
+        <div>
+          <button id="newLeg">New leg</button>
+        </div>
       </div>
 
-      <div>
-        <label for="player2">Player 2</label>
-        <select id="player2" required>
-          <option value="">(Select player)</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="startValue">Start value</label>
-        <select id="startValue" class="align-right" required>
-          <option value="">(Select start value)</option>
-          <option value="201">201</option>
-          <option value="301">301</option>
-          <option value="501">501</option>
-        </select>
-      </div>
-
-      <div>
-        <button id="newLeg">New leg</button>
-      </div>
-    </div>
-
-    <section>
-      <table id="legTable" class="legs-table" hidden>
-        <thead>
+      <section>
+        <table id="legTable" class="legs-table" hidden>
           <tr>
-            <th colspan="4" id="player1Header">Player 1</th>
-            <th colspan="4" id="player2Header">Player 2</th>
+            <td valign="top">
+              <div id="divPlayer1"></div>
+            </td>
+            <td valign="top"> 
+              <div id="divPlayer2"></div>
+            </td>
           </tr>
-          <tr>
-            <th>Dart 1</th>
-            <th>Dart 2</th>
-            <th>Dart 3</th>
-            <th>Left</th>
-            <th>Dart 1</th>
-            <th>Dart 2</th>
-            <th>Dart 3</th>
-            <th>Left</th>
-          </tr>
-        </thead>
-        <tbody id="legBody"></tbody>
-      </table>
 
-      <button id="nextRound" hidden>Next round</button>
-      <button id="saveLeg" hidden>Save leg</button>
-    </section>
+        </table>
 
-    <script type="module" src="./legs.js"></script>
-      </main>
-    </div>
-  </body>
+        <button id="nextRound" hidden>Next round</button>
+        <button id="saveLeg" hidden>Save leg</button>
+      </section>
+
+      <script type="module" src="./legs.js"></script>
+      <div id="goodMessage" class="goodText"></div>
+      <div id="errorMessage" class="errorText"></div>
+    </main>
+  </div>
+</body>
+
 </html>

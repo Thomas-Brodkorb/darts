@@ -28,6 +28,7 @@ export class Visit {
         this.darts.forEach((dart) => {
             const td = document.createElement('td');
             td.classList.add('align-right');
+            td.classList.add('displayCell');
             td.textContent = dart ? dart.value : '';
             row.appendChild(td);
         });
@@ -55,6 +56,7 @@ export class Visit {
         for (let i = 0; i < 3; i += 1) {
             const td = document.createElement('td');
             const input = Dart.createInputField(errorMessage, goodMessage, setDarts[i]);
+            td.classList.add('inputCell');
             td.appendChild(input);
             row.appendChild(td);
         }

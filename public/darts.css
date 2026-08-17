@@ -33,7 +33,7 @@ canvas  {
 .players-table,
 .legs-table,
 .visits-table {
-  width: 100%;
+  width: 280px;
   border-collapse: collapse;
   margin-top: 16px;
 }
@@ -63,8 +63,29 @@ td.winner {
 .players-table td.align-right,
 .legs-table td.align-right,
 .visits-table td.align-right,
-input.align-right,
+.inputField.align-right,
+.inputCell.align-right,
 select.align-right {
+  text-align: right;
+}
+
+.inputField {
+  width: 55px;
+  text-align: right;
+}
+
+.inputCell {
+  width: 80px;
+  text-align: right;
+}
+
+.displayCell {
+  width: 80px;
+  text-align: right;
+}
+
+.leftCell {
+  width: 40px;
   text-align: right;
 }
 

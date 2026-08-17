@@ -1,15 +1,18 @@
-import { fetchPlayers } from './common.js'
+import { fetchPlayers, createPlayerTable, createLiveVisitRow, updateLiveRowLeft, addLeftColumn } from './common.js'
+import { Dart } from './dart.js';
+import { Visit } from './visit.js';
 
 const player1Select = document.getElementById('player1')
 const player2Select = document.getElementById('player2')
 const startValueSelect = document.getElementById('startValue')
 const newLegButton = document.getElementById('newLeg')
 const legTable = document.getElementById('legTable')
-const legBody = document.getElementById('legBody')
+const visitDivs = [document.getElementById('divPlayer1'), document.getElementById('divPlayer2')];
 const nextRoundButton = document.getElementById('nextRound')
 const saveLegButton = document.getElementById('saveLeg')
-const player1Header = document.getElementById('player1Header')
-const player2Header = document.getElementById('player2Header')
+const errorMessage = document.getElementById('errorMessage');
+const goodMessage = null; // document.getElementById('goodMessage');
+
 
 let currentLeg = null
 let allPlayers = []
@@ -49,82 +52,9 @@ function updatePlayerOptions() {
   })
 }
 
-function createInputRow() {
-  const row = document.createElement('tr')
 
-  // Player 1 darts
-  for (let i = 0; i < 3; i += 1) {
-    const td = document.createElement('td')
-    const input = document.createElement('input')
-    input.type = 'number'
-    input.min = '0'
-    input.classList.add('align-right')
-    input.style.width = '80%'
-    td.appendChild(input)
-    row.appendChild(td)
-  }
 
-  // Left column (computed)
-  const left1 = document.createElement('td')
-  left1.classList.add('align-right')
-  row.appendChild(left1)
 
-  // Player 2 darts
-  for (let i = 0; i < 3; i += 1) {
-    const td = document.createElement('td')
-    const input = document.createElement('input')
-    input.type = 'number'
-    input.min = '0'
-    input.classList.add('align-right')
-    input.style.width = '80%'
-    td.appendChild(input)
-    row.appendChild(td)
-  }
-
-  // Left column (computed)
-  const left2 = document.createElement('td')
-  left2.classList.add('align-right')
-  row.appendChild(left2)
-
-  // Update during typing
-  const inputs = row.querySelectorAll('input')
-  inputs.forEach((input) => {
-    input.addEventListener('input', () => {
-      updateInputRowLefts(row)
-    })
-    input.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return
-      event.preventDefault()
-      if (input.value.trim() === '') return
-      const inputsArray = Array.from(row.querySelectorAll('input'))
-      const currentIndex = inputsArray.indexOf(input)
-      if (currentIndex < inputsArray.length - 1) {
-        inputsArray[currentIndex + 1].focus()
-      } else {
-        nextRoundButton.focus()
-      }
-    })
-  })
-
-  return row
-}
-
-function updateInputRowLefts(row) {
-  if (!currentLeg) return
-
-  const inputs = Array.from(row.querySelectorAll('input'))
-  const [d1, d2, d3, d4, d5, d6] = inputs.map((input) => {
-    const val = input.value.trim()
-    return val === '' ? 0 : Number(val)
-  })
-
-  const [left1, left2] = currentLeg.left
-  const leftCell1 = row.children[3]
-  const leftCell2 = row.children[7]
-
-  leftCell1.textContent = left1 - (d1 + d2 + d3)
-  leftCell2.textContent = left2 - (d4 + d5 + d6)
-}
 
 function createDisplayRow(values) {
   const row = document.createElement('tr')
@@ -154,48 +84,106 @@ function resetLeg() {
   legTable.hidden = true
   nextRoundButton.hidden = true
   saveLegButton.hidden = true
-  legBody.innerHTML = ''
+  visitDivs.forEach((div) => {
+    div.innerHTML = ''
+  })
+  legTable.querySelectorAll('tr').forEach((row) => {
+    if (row !== legTable.querySelector('tr:first-child')) {
+      row.remove()
+    }
+  })
 
-  player1Header.textContent = 'Player 1'
-  player2Header.textContent = 'Player 2'
 }
 
 function startLeg(player1, player2, startValue) {
   currentLeg = {
-    player1,
-    player2,
     startValue,
-    left: [startValue, startValue],
-    rounds: 0,
-    roundsData: [],
+    players: [{
+      player: player1,
+      left: startValue,
+      roundsData: [],
+      isFinished: false,
+      table: null,
+      tbody: null,
+      liveRow: null,
+    }, {
+      player: player2,
+      left: startValue,
+      roundsData: [],
+      isFinished: false,
+      table: null,
+      tbody: null,
+      liveRow: null,
+    }],
     isBreak: false,
+    rounds: 0
   }
+
 
   player1Select.disabled = true
   player2Select.disabled = true
   startValueSelect.disabled = true
   newLegButton.textContent = 'Reset leg'
 
-  player1Header.textContent = player1.name
-  player2Header.textContent = player2.name
+  visitDivs.forEach((div, index) => {
+    const player = currentLeg.players[index]
+    div.appendChild(createPlayerTable(player));
+    div.style.verticalAlign = 'top';
+  });
 
-  legTable.hidden = false
-  nextRoundButton.hidden = false
-  nextRoundButton.disabled=false
-  saveLegButton.hidden = true
+  nextRoundButton.hidden = false;
+  nextRoundButton.disabled = false;
+  saveLegButton.hidden = true;
+  legTable.hidden = false;
 
-  legBody.innerHTML = ''
-  const inputRow = createInputRow()
-  legBody.appendChild(inputRow)
+
+  currentLeg.players.forEach((trainingPlayer) => {
+    trainingPlayer.liveRow = createLiveVisitRow(trainingPlayer, errorMessage, goodMessage);
+    trainingPlayer.tbody.appendChild(trainingPlayer.liveRow);
+    updateLiveRowLeft(trainingPlayer)
+  })
+
+
+
 
   // Set initial left values (start value) for the live input row
-  updateInputRowLefts(inputRow)
-  focusFirstInput(inputRow)
+  setInputFocusHandling();
+  focusFirstActiveInput();
 }
 
-function focusFirstInput(row) {
-  const firstInput = row.querySelector('input')
-      if (firstInput) firstInput.focus()
+function setInputFocusHandling() {
+  const inputs = Array.from(legTable.querySelectorAll('tr.live-row input:not(:disabled)'))
+  inputs.forEach((input, index) => {
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        const nextInput = getNextLiveInput(input)
+        if (nextInput) {
+          nextInput.focus()
+        } else {
+          nextRoundButton.focus()
+        }
+      }
+    })
+  })
+}
+
+function getNextLiveInput(currentInput) {
+  const inputs = Array.from(legTable.querySelectorAll('tr.live-row input:not(:disabled)'))
+  const currentIndex = inputs.indexOf(currentInput)
+  if (currentIndex === -1 || currentIndex === inputs.length - 1) {
+    return null
+  }
+  return inputs[currentIndex + 1]
+}
+
+function focusFirstActiveInput() {
+  const activeInput = legTable.querySelector('tr.live-row input:not(:disabled)')
+  if (activeInput) {
+    activeInput.focus()
+  } else {
+    nextRoundButton.focus()
+  }
 }
 
 function getCurrentInputValues() {
@@ -213,7 +201,7 @@ function clearInputs({ focusFirst = true } = {}) {
   if (inputRow) {
     updateInputRowLefts(inputRow)
     if (focusFirst) {
-      focusFirstInput(inputRow)
+      focusFirstActiveInput()
     }
   }
 }
@@ -250,89 +238,103 @@ newLegButton.addEventListener('click', async () => {
   startLeg(player1, player2, startValue)
 })
 
-nextRoundButton.addEventListener('click', () => {
-  if (!currentLeg) return
+nextRoundButton.addEventListener('click', startNextRound);
 
-  const values = getCurrentInputValues()
+function startNextRound() {
+  if (!currentLeg) return;
+  // Check if one player has finished the leg. 
+  if (currentLeg.players.some(player => player.currentVisit && player.left === player.currentVisit.totalScore)) {
+    console.log('One player has already finished the leg. Don\'t check for missing values, );');
 
-  // Validate all fields have values
-  if (values.some((v) => v === '')) {
-    alert('Please fill in all dart values before proceeding to the next round.')
-    return
+  } else {
+
+    // Ensure all players entered all their dart values before proceeding to the next round
+    const hasMissingValue = currentLeg.players.some((player) => {
+      return !player.currentVisit || !player.currentVisit.isComplete;
+    });
+
+    if (hasMissingValue) {
+      alert('Please fill in all dart values before proceeding to the next round.')
+      return
+    }
   }
 
-  const numericValues = values.map((v) => Number(v))
-  if (numericValues.some((v) => Number.isNaN(v))) {
-    alert('Please enter valid numbers for all dart values.')
-    return
-  }
+  let playerFinished = null;
+  currentLeg.players.forEach((player) => {
+    if (player.currentVisit) {
+      const newLeft = player.left - player.currentVisit.totalScore;
+      const finalLeft = newLeft < 0 ? player.left : newLeft;
 
-  const [d1, d2, d3, d4, d5, d6] = numericValues
+      const displayRow = player.currentVisit.createDisplayRow();
 
-  const [left1, left2] = currentLeg.left
-  const newLeft1 = left1 - (d1 + d2 + d3)
-  const newLeft2 = left2 - (d4 + d5 + d6)
+      addLeftColumn(displayRow, finalLeft);
+      player.tbody.insertBefore(displayRow, player.liveRow);
+      player.left = finalLeft;
 
-  // Prevent going negative
-  currentLeg.left = [newLeft1<0 ? left1 : newLeft1, newLeft2<0 ? left2 : newLeft2]
+      player.roundsData.push({
+        visit: player.currentVisit
+      })
 
-  const displayRow = createDisplayRow([
-    d1,
-    d2,
-    d3,
-    newLeft1,
-    d4,
-    d5,
-    d6,
-    newLeft2,
-  ])
+      if (finalLeft === 0) {
+        player.isFinished = true;
+        if (!playerFinished) {
+          playerFinished = player;
+        }
+      }
+    }
 
-  // Insert display row above the input row
-  legBody.insertBefore(displayRow, legBody.lastElementChild)
+    player.liveRow.remove(); // Remove the old live row
+    player.liveRow = createLiveVisitRow(player, errorMessage, goodMessage); // Recreate the live row for the next round
+    player.currentVisit = null; // Reset current visit for the next round
+    player.tbody.appendChild(player.liveRow); // Append the new live row
 
-  // Track completed rounds and record visit values
-  currentLeg.roundsData.push({
-    player_one_values: [d1, d2, d3],
-    player_two_values: [d4, d5, d6],
   })
-  currentLeg.rounds = currentLeg.roundsData.length
+  currentLeg.rounds += 1
+  if (playerFinished) {
+    if (playerFinished === currentLeg.players[1])
+      currentLeg.isBreak = true;
 
-  const isWinner = newLeft1 === 0 || newLeft2 === 0
-  clearInputs({ focusFirst: !isWinner })
+    // remove the live rows for both players since the leg is finished
+    currentLeg.players.forEach((player) => {
+      if (player.liveRow) {
+        player.liveRow.remove();
+        player.liveRow = null;
+      }
+    });
 
-  // If someone just finished the leg, show winner and offer save
-  if (isWinner) {
-    currentLeg.isBreak = newLeft2 === 0
-
-    // Remove the now-unused input row
-    const inputRow = legBody.querySelector('tr:last-child')
-    if (inputRow) inputRow.remove()
 
     nextRoundButton.disabled = true
     saveLegButton.hidden = false
 
-    const winnerName = newLeft1 === 0 ? currentLeg.player1.name : currentLeg.player2.name
+    const winnerName = playerFinished.player.name;
     const winnerRow = document.createElement('tr')
     const td = document.createElement('td')
-    td.setAttribute('colspan', '8')
+    td.setAttribute('colspan', '2')
     td.textContent = `Winner: ${winnerName}`
     td.style.fontWeight = 'bold'
     td.style.textAlign = 'center'
     winnerRow.appendChild(td)
-    legBody.appendChild(winnerRow)
+    legTable.appendChild(winnerRow)
 
     // Focus the save button (no more input needed)
     saveLegButton.focus()
+  } else {
+    // Focus the first active input for the next round
+    setInputFocusHandling();
+    focusFirstActiveInput();
   }
-})
+}
+
+
+
 
 // Save leg button behavior
 saveLegButton.addEventListener('click', async () => {
   if (!currentLeg) return
 
   const payload = {
-    player_one: currentLeg.player1.id,
-    player_two: currentLeg.player2.id,
+    player_one: currentLeg.players[0].player.id,
+    player_two: currentLeg.players[1].player.id,
     "break": currentLeg.isBreak,
     start_value: currentLeg.startValue,
     rounds: currentLeg.rounds,
@@ -340,18 +342,14 @@ saveLegButton.addEventListener('click', async () => {
   }
 
   // create one visit per player per round
-  currentLeg.roundsData.forEach(({ player_one_values, player_two_values }) => {
-    const playerOneSum = player_one_values.reduce((sum, v) => sum + v, 0)
-    const playerTwoSum = player_two_values.reduce((sum, v) => sum + v, 0)
-
-    payload.visits.push({ player_id: currentLeg.player1.id, value: playerOneSum })
-    payload.visits.push({ player_id: currentLeg.player2.id, value: playerTwoSum })
+  currentLeg.players.forEach((trainingPlayer) => {
+    trainingPlayer.roundsData.forEach((roundData) => {
+      payload.visits.push({
+        player_id: trainingPlayer.player.id,
+        value: roundData.visit.totalScore
+      })
+    })
   })
-
-  // if first players wins, second player does not throw for the last visit. Dont publish that visit.
-    if (!currentLeg.isBreak) {
-      payload.visits.pop();
-    }
 
   try {
     const res = await fetch('/api/legs', {
@@ -372,11 +370,11 @@ saveLegButton.addEventListener('click', async () => {
   }
 })
 
-// Initial setup
-;(async () => {
-  const players = await fetchPlayers()
-  setPlayers(players)
-  
-  player1Select.addEventListener('change', updatePlayerOptions)
-  player2Select.addEventListener('change', updatePlayerOptions)
-})()
+  // Initial setup
+  ; (async () => {
+    const players = await fetchPlayers()
+    setPlayers(players)
+
+    player1Select.addEventListener('change', updatePlayerOptions)
+    player2Select.addEventListener('change', updatePlayerOptions)
+  })()

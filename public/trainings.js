@@ -1,4 +1,4 @@
-import { fetchPlayers, populatePlayerSelect } from './common.js';
+import { fetchPlayers, populatePlayerSelect, createPlayerTable, createLiveVisitRow, updateLiveRowLeft, addLeftColumn } from './common.js';
 import { Dart } from './Dart.js';
 import { Visit } from './Visit.js';
 
@@ -13,6 +13,8 @@ const trainingSection = document.getElementById('trainingSection')
 const trainingTables = document.getElementById('trainingTables')
 const nextRoundButton = document.getElementById('nextRound')
 const saveTrainingsButton = document.getElementById('saveTrainings')
+const errorMessage = document.getElementById('errorMessage');
+const goodMessage = null; // document.getElementById('goodMessage');
 
 let players = []
 let currentTraining = null
@@ -161,6 +163,7 @@ function startTraining() {
       liveRow: null,
     })),
     rounds: 0,
+    currentVisit: null
   }
 
   trainingSection.hidden = false
@@ -179,36 +182,11 @@ function startTraining() {
   trainingTables.innerHTML = ''
 
   currentTraining.players.forEach((trainingPlayer) => {
-    const table = document.createElement('table')
-    table.classList.add('legs-table')
+    const table = createPlayerTable(trainingPlayer);
+    trainingTables.appendChild(table);
 
-    const thead = document.createElement('thead')
-    const headerRow = document.createElement('tr')
-    const headerCell = document.createElement('th')
-    headerCell.setAttribute('colspan', '4')
-    headerCell.textContent = trainingPlayer.player.name
-    headerRow.appendChild(headerCell)
-    thead.appendChild(headerRow)
-
-    const labelRow = document.createElement('tr');
-    ['Dart 1', 'Dart 2', 'Dart 3', 'Left'].forEach((text) => {
-      const th = document.createElement('th')
-      th.textContent = text
-      labelRow.appendChild(th)
-    })
-    thead.appendChild(labelRow)
-
-    const tbody = document.createElement('tbody')
-    const liveRow = createLiveRow(trainingPlayer)
-    tbody.appendChild(liveRow)
-
-    table.appendChild(thead)
-    table.appendChild(tbody)
-    trainingTables.appendChild(table)
-
-    trainingPlayer.table = table
-    trainingPlayer.tbody = tbody
-    trainingPlayer.liveRow = liveRow
+    trainingPlayer.liveRow = createLiveVisitRow(trainingPlayer, errorMessage, goodMessage);
+    trainingPlayer.tbody.appendChild(trainingPlayer.liveRow);
     updateLiveRowLeft(trainingPlayer)
   })
 
@@ -216,37 +194,7 @@ function startTraining() {
   focusFirstActiveInput()
 }
 
-function createLiveRow(trainingPlayer) {
-  const errorMessage = document.getElementById('errorMessage');
-  const goodMessage = document.getElementById('goodMessage');
 
-  const row = Visit.createInputRow(errorMessage, goodMessage, (visit) => {
-    if (!visit) return
-    trainingPlayer.liveRow.dataset.visit = JSON.stringify({
-      darts: visit.darts.map(dart => dart ? dart.value : null),
-      totalScore: visit.totalScore,
-      complete: visit.isComplete
-    })
-    updateLiveRowLeft(trainingPlayer);
-  });
-  row.classList.add('live-row')
-  row.dataset.playerId = String(trainingPlayer.player.id);
-
-  const leftTd = document.createElement('td')
-  leftTd.classList.add('align-right')
-  leftTd.textContent = String(trainingPlayer.left);
-  row.appendChild(leftTd)
-
-  return row;
-}
-
-function updateLiveRowLeft(trainingPlayer) {
-  if (!trainingPlayer || !trainingPlayer.liveRow) return;
-  const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
-  const sum = visitData ? visitData.totalScore : 0;
-  const leftCell = trainingPlayer.liveRow.children[3];
-  leftCell.textContent = trainingPlayer.left - sum;
-}
 
 function setInputFocusHandling() {
   const inputs = Array.from(trainingTables.querySelectorAll('tr.live-row input:not(:disabled)'))
@@ -274,27 +222,8 @@ function getNextLiveInput(currentInput) {
   return inputs[currentIndex + 1]
 }
 
-function createDisplayRow(values) {
-  const row = document.createElement('tr')
-  values.forEach((value) => {
-    const td = document.createElement('td')
-    td.classList.add('align-right')
-    td.textContent = String(value)
-    row.appendChild(td)
-  })
-  return row
-}
 
-function clearActiveInputs() {
-  currentTraining.players.forEach((trainingPlayer) => {
-    if (trainingPlayer.isFinished) return
-    const inputs = Array.from(trainingPlayer.liveRow.querySelectorAll('input'))
-    inputs.forEach((input) => {
-      input.value = ''
-    })
-    updateLiveRowLeft(trainingPlayer)
-  })
-}
+
 
 function focusFirstActiveInput() {
   const activeInput = trainingTables.querySelector('tr.live-row input:not(:disabled)')
@@ -311,8 +240,7 @@ function startRound() {
   const activePlayers = currentTraining.players.filter((trainingPlayer) => !trainingPlayer.isFinished);
 
   const hasMissingValue = activePlayers.some((trainingPlayer) => {
-    const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
-    return !visitData || !visitData.complete;
+    return !trainingPlayer.currentVisit || !trainingPlayer.currentVisit.isComplete;
   });
 
   if (hasMissingValue) {
@@ -322,28 +250,27 @@ function startRound() {
 
 
   activePlayers.forEach((trainingPlayer) => {
-    const visitData = trainingPlayer.liveRow.dataset.visit ? JSON.parse(trainingPlayer.liveRow.dataset.visit) : null;
-    if (!visitData) return;
-
-    const values = visitData.darts.map(dartValue => dartValue !== null ? Number(dartValue) : 0);
-    const roundSum = visitData.totalScore;
-
-    const newLeft = trainingPlayer.left - roundSum;
+    const newLeft = trainingPlayer.left - (trainingPlayer.currentVisit ? trainingPlayer.currentVisit.totalScore : 0);
     const finalLeft = newLeft < 0 ? trainingPlayer.left : newLeft;
 
-    const displayRow = createDisplayRow([...values, finalLeft])
+    const displayRow = trainingPlayer.currentVisit.createDisplayRow();
+
+    addLeftColumn(displayRow, finalLeft);
     trainingPlayer.tbody.insertBefore(displayRow, trainingPlayer.liveRow);
     trainingPlayer.left = finalLeft;
 
+    if (trainingPlayer.currentVisit) {
+      trainingPlayer.roundsData.push({
+        visit: trainingPlayer.currentVisit
+      })
+    }
+
     trainingPlayer.liveRow.remove(); // Remove the old live row
-    trainingPlayer.liveRow = createLiveRow(trainingPlayer); // Recreate the live row for the next round
+    trainingPlayer.liveRow = createLiveVisitRow(trainingPlayer, errorMessage, goodMessage); // Recreate the live row for the next round
+    trainingPlayer.currentVisit = null; // Reset the current visit for the next round
     trainingPlayer.tbody.appendChild(trainingPlayer.liveRow); // Append the new live row
 
-
-    trainingPlayer.roundsData.push({
-      values,
-      value: roundSum,
-    })
+    
 
 
     if (finalLeft === 0) {
@@ -373,7 +300,7 @@ async function saveTrainings() {
     trainingPlayer.roundsData.forEach((roundData) => {
       visits.push({
         player_id: trainingPlayer.player.id,
-        value: roundData.value,
+        value: roundData.visit.totalScore
       })
     })
   })
