@@ -4,7 +4,7 @@ const visitsOutput = document.getElementById('visitsOutput')
 const refreshVisitsButton = document.getElementById('refreshVisits')
 
 function createVisitHeaderRow(headerRow) {
-  ['id', 'player_name', 'value', 'created_at'].forEach((key) => {
+  ['id', 'player_name', 'dart 1', 'dart 2', 'dart 3', 'value', 'created_at'].forEach((key) => {
     const th = document.createElement('th')
     th.textContent = key
     headerRow.appendChild(th)
@@ -31,13 +31,14 @@ function renderVisits(visits) {
 
   visits.forEach((visit) => {
     const row = document.createElement('tr')
-    const values = [visit.id, visit.player_name, visit.value, formatDate(visit.created_at)]
+    const values = [visit.id, visit.player_name, visit.dart1 || '', visit.dart2 || '', visit.dart3 || '', visit.value, formatDate(visit.created_at)]
     let col = 0
 
     values.forEach((value) => {
       const td = document.createElement('td')
       td.textContent = value
-      if (col === 2) {
+      // right-align dart1, dart2, dart3 and value columns
+      if ([2, 3, 4, 5].includes(col)) {
         td.classList.add('align-right')
       }
       row.appendChild(td)

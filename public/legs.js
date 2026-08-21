@@ -346,7 +346,7 @@ saveLegButton.addEventListener('click', async () => {
     trainingPlayer.roundsData.forEach((roundData) => {
       payload.visits.push({
         player_id: trainingPlayer.player.id,
-        value: roundData.visit.totalScore
+        darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
       })
     })
   })

@@ -28,3 +28,11 @@ CREATE TABLE IF NOT EXISTS Visits (
   value integer NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Table to store individual darts for a visit
+CREATE TABLE IF NOT EXISTS Darts (
+  id serial PRIMARY KEY,
+  single_value integer NOT NULL,
+  factor integer NOT NULL,
+  visit integer NOT NULL references Visits(id) on delete cascade
+);

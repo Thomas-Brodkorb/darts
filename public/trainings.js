@@ -298,10 +298,11 @@ async function saveTrainings() {
   const visits = []
   currentTraining.players.forEach((trainingPlayer) => {
     trainingPlayer.roundsData.forEach((roundData) => {
-      visits.push({
+      const visitPayload = {
         player_id: trainingPlayer.player.id,
-        value: roundData.visit.totalScore
-      })
+        darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
+      }
+      visits.push(visitPayload)
     })
   })
 

@@ -82,6 +82,16 @@ export class Dart {
         return this.#singleDartValue;
     }
 
+    toString() {
+        if (this.#isDouble) {
+            return `D${this.#singleDartValue}`;
+        } else if (this.#isTriple) {
+            return `T${this.#singleDartValue}`;
+        } else {
+            return `${this.#singleDartValue}`;
+        }
+    }
+
     /*
      creates an input field for dart values with validation and feedback messages.
         errorMessage: an element to display error messages
