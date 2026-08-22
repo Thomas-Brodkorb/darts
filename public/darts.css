@@ -156,6 +156,29 @@ input[type="number"] {
   margin-top: 0;
 }
 
+.collapsible-title {
+  cursor: pointer;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.collapsible-title::before {
+  content: '▾';
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.collapsible-section.collapsed .collapsible-title::before {
+  content: '▸';
+}
+
+.collapsible-section.collapsed .panel {
+  display: none;
+}
+
 .main-content {
   min-width: 0;
 }
