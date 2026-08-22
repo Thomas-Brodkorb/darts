@@ -8,6 +8,9 @@ const averagesMonthOutput = document.getElementById('averagesMonth')
 const averagesAllOutput = document.getElementById('averagesAll')
 const refreshLegsButton = document.getElementById('refreshLegs')
 const refreshAveragesButton = document.getElementById('refreshAverages')
+const showAllTimesTrainingsToggle = document.getElementById('showAllTimesTrainings')
+const refreshTrainingsButton = document.getElementById('refreshTrainings')
+const trainingsDetailsOutput = document.getElementById('trainingsDetails')
 
 function populateLegSelect(legs) {
   const legSelect = document.getElementById('leg')
@@ -228,6 +231,56 @@ function createAverageHeaderRow(headerRow) {
   return headerRow
 }
 
+function renderTrainingsTableInto(container, trainings) {
+  if (!Array.isArray(trainings)) {
+    container.textContent = JSON.stringify(trainings, null, 2)
+    return
+  }
+  if (trainings.length === 0) {
+    container.textContent = 'No trainings found.'
+    return
+  }
+
+  const table = document.createElement('table');
+  table.classList.add('legs-table');
+  const headerRow = document.createElement('tr');
+  ['id', 'Player', 'Start Value', 'Rounds', 'Player @'].forEach((key) => {
+    const th = document.createElement('th')
+    th.textContent = key
+    headerRow.appendChild(th)
+  })
+  table.appendChild(headerRow)
+
+  trainings.forEach((t) => {
+    const row = document.createElement('tr')
+    const values = [
+      t.id,
+      t.player_name || t.player || '',
+      t.start_value,
+      t.rounds,
+      formatDate(t.created_at),
+    ]
+
+    let column = 1;
+    values.forEach((value) => {
+      const td = document.createElement('td')
+      td.textContent = value
+      if (column === 3 || column === 4) td.classList.add('align-right')
+      column++
+      row.appendChild(td)
+    })
+
+    table.appendChild(row)
+  })
+
+  let detailsHeader = document.createElement('h2');
+  detailsHeader.textContent = 'Details';
+
+  container.innerHTML = '';
+  container.appendChild(detailsHeader);
+  container.appendChild(table);
+}
+
 async function loadLegs() {
   try {
     const [allRes, monthRes] = await Promise.all([
@@ -275,7 +328,33 @@ async function loadAverages() {
 
 refreshLegsButton.addEventListener('click', () => loadLegs())
 refreshAveragesButton.addEventListener('click', () => loadAverages())
+refreshTrainingsButton && refreshTrainingsButton.addEventListener('click', () => loadTrainings())
 
-Promise.all([loadAverages(), loadLegs()]).catch((error) => {
+async function loadTrainings() {
+  try {
+    const [allRes, monthRes] = await Promise.all([
+      fetch('/api/trainings'),
+      fetch('/api/trainings/month')
+    ])
+    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
+
+    function updateDetails() {
+      if (showAllTimesTrainingsToggle && showAllTimesTrainingsToggle.checked) {
+        renderTrainingsTableInto(trainingsDetailsOutput, allData)
+      } else {
+        renderTrainingsTableInto(trainingsDetailsOutput, monthData)
+      }
+    }
+
+    if (showAllTimesTrainingsToggle) {
+      showAllTimesTrainingsToggle.addEventListener('change', updateDetails)
+    }
+    updateDetails()
+  } catch (error) {
+    console.warn('Error fetching trainings:', error)
+  }
+}
+
+Promise.all([loadAverages(), loadLegs(), loadTrainings()]).catch((error) => {
   console.warn('Error loading initial data:', error)
 })

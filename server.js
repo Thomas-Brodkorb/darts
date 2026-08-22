@@ -365,6 +365,41 @@ app.get('/api/legs/month', async (req, res) => {
   }
 })
 
+// Trainings: list all trainings
+app.get('/api/trainings', async (req, res) => {
+  try {
+    const trainings = await sql`
+      select t.*, p.name as player_name
+      from Trainings t
+      join Players p on p.id = t.player
+      order by t.created_at desc
+    `
+
+    res.json(trainings)
+  } catch (error) {
+    console.error('GET /api/trainings error:', error)
+    res.status(500).json({ error: 'Unable to fetch trainings' })
+  }
+})
+
+// Trainings for current month
+app.get('/api/trainings/month', async (req, res) => {
+  try {
+    const trainings = await sql`
+      select t.*, p.name as player_name
+      from Trainings t
+      join Players p on p.id = t.player
+      where date_trunc('month', t.created_at) = date_trunc('month', now())
+      order by t.created_at desc
+    `
+
+    res.json(trainings)
+  } catch (error) {
+    console.error('GET /api/trainings/month error:', error)
+    res.status(500).json({ error: 'Unable to fetch monthly trainings' })
+  }
+})
+
 // Trainings: store training sessions per player
 app.post('/api/trainings', async (req, res) => {
   try {

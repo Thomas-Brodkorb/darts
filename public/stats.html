@@ -24,8 +24,9 @@
     </aside>
 
     <main class="main-content">
+      <h1>Stats</h1>
       <section>
-        <h1>Stats</h1>
+        
         <h2>Average visits</h2>
         <div class="panel">
           <div class="two-columns">
@@ -42,6 +43,8 @@
           <div style="margin-top:8px;"><button id="refreshAverages">Refresh</button></div>
         </div>
       </section>
+
+
 
       <section>
         <h2>Legs</h2>
@@ -68,7 +71,19 @@
         </div>
       </section>
 
-
+      <section>
+        <h2>Trainings</h2>
+        <div class="panel">
+          <div style="margin-top:8px; display:flex; gap:12px; align-items:center;">
+            <label style="display:flex; gap:6px; align-items:center;">
+              <input type="checkbox" id="showAllTimesTrainings" />
+              <span>show all times</span>
+            </label>
+            <button id="refreshTrainings">Refresh</button>
+          </div>
+          <div id="trainingsDetails" style="margin-top:12px;">Loading…</div>
+        </div>
+      </section>
     </main>
   </div>
 
