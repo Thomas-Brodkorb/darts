@@ -192,6 +192,7 @@ app.get('/api/legs', async (req, res) => {
   }
 })
 
+// monthly legs endpoint should be defined before the '/api/legs/:id' route
 /*
 select l.player_one, p1.name as player_one_name, count(l.id)
       from Legs l
@@ -200,6 +201,24 @@ select l.player_one, p1.name as player_one_name, count(l.id)
       group by l.player_one,p1.name
       order by count(l.id) desc
 */
+
+app.get('/api/legs/month', async (req, res) => {
+  try {
+    const legs = await sql`
+      select l.*, p1.name as player_one_name, p2.name as player_two_name
+      from Legs l
+      join Players p1 on p1.id = l.player_one
+      join Players p2 on p2.id = l.player_two
+      where date_trunc('month', l.created_at) = date_trunc('month', now())
+      order by l.created_at desc
+    `
+
+    res.json(legs)
+  } catch (error) {
+    console.error('GET /api/legs/month error:', error)
+    res.status(500).json({ error: 'Unable to fetch monthly legs' })
+  }
+})
 
 app.get('/api/legs/:id', async (req, res) => {
   try {
@@ -305,6 +324,44 @@ app.get('/api/player-averages', async (req, res) => {
   } catch (error) {
     console.error('GET /api/player-averages error:', error)
     res.status(500).json({ error: 'Unable to fetch averages' })
+  }
+})
+
+app.get('/api/player-averages/month', async (req, res) => {
+  try {
+    const averages = await sql`
+      select
+        p.name as player_name,
+        avg(v.value) as average_value
+      from Visits v
+      join Players p on p.id = v.player_id
+      where date_trunc('month', v.created_at) = date_trunc('month', now())
+      group by p.name
+      order by average_value desc
+    `
+
+    res.json(averages)
+  } catch (error) {
+    console.error('GET /api/player-averages/month error:', error)
+    res.status(500).json({ error: 'Unable to fetch monthly averages' })
+  }
+})
+
+app.get('/api/legs/month', async (req, res) => {
+  try {
+    const legs = await sql`
+      select l.*, p1.name as player_one_name, p2.name as player_two_name
+      from Legs l
+      join Players p1 on p1.id = l.player_one
+      join Players p2 on p2.id = l.player_two
+      where date_trunc('month', l.created_at) = date_trunc('month', now())
+      order by l.created_at desc
+    `
+
+    res.json(legs)
+  } catch (error) {
+    console.error('GET /api/legs/month error:', error)
+    res.status(500).json({ error: 'Unable to fetch monthly legs' })
   }
 })
 

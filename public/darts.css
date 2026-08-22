@@ -31,11 +31,18 @@ canvas  {
 }
 
 .players-table,
-.legs-table,
 .visits-table {
   width: 280px;
   border-collapse: collapse;
   margin-top: 16px;
+}
+
+.legs-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  table-layout: auto;
 }
 
 .players-table th,
@@ -116,6 +123,27 @@ input[type="number"] {
   grid-template-columns: 220px 1fr;
   gap: 20px;
   align-items: flex-start;
+}
+
+.two-columns {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.two-columns > div {
+  flex: 1 1 0;
+}
+
+.panel {
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 6px;
+}
+.panel canvas {
+  display: block;
+  margin-top: 12px;
+  background: white;
+  padding: 8px;
 }
 
 .sidebar {

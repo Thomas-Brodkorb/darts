@@ -25,16 +25,47 @@
 
     <main class="main-content">
       <section>
-        <h1>Player's average visit</h1>
-        <pre id="averagesOutput">Loading…</pre>
-        <canvas id="visits"></canvas>
-        <button id="refreshAverages">Refresh</button>
+        <h1>Stats</h1>
+        <h2>Average visits</h2>
+        <div class="panel">
+          <div class="two-columns">
+            <div id="averagesMonthContainer">
+              <h3>this month</h3>
+              <div id="averagesMonth">Loading…</div>
+            </div>
+            <div id="averagesAllContainer">
+              <h3>all times</h3>
+              <div id="averagesAll">Loading…</div>
+            </div>
+          </div>
+          <canvas id="visits"></canvas>
+          <div style="margin-top:8px;"><button id="refreshAverages">Refresh</button></div>
+        </div>
       </section>
 
       <section>
         <h2>Legs</h2>
-        <pre id="legsOutput">Loading…</pre>
-        <button id="refreshLegs">Refresh</button>
+        <div class="panel">
+          <h3>Winners</h3>
+          <div class="two-columns">
+            <div id="legsWinnersMonthContainer">
+              <h4>this month</h4>
+              <div id="legsWinnersMonth">Loading…</div>
+            </div>
+            <div id="legsWinnersAllContainer">
+              <h4>all times</h4>
+              <div id="legsWinnersAll">Loading…</div>
+            </div>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:12px; align-items:center;">
+            <label style="display:flex; gap:6px; align-items:center;">
+              <input type="checkbox" id="showAllTimesLegs" />
+              <span>show all times legs</span>
+            </label>
+            <button id="refreshLegs">Refresh</button>
+          </div>
+          <div id="legsDetails" style="margin-top:12px;">Loading…</div>
+        </div>
       </section>
 
 

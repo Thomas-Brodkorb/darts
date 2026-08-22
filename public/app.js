@@ -1,7 +1,11 @@
 import { formatDate } from './common.js'
 
-const legsOutput = document.getElementById('legsOutput')
-const averagesOutput = document.getElementById('averagesOutput')
+const legsWinnersMonthOutput = document.getElementById('legsWinnersMonth')
+const legsWinnersAllOutput = document.getElementById('legsWinnersAll')
+const legsDetailsOutput = document.getElementById('legsDetails')
+const showAllTimesLegsToggle = document.getElementById('showAllTimesLegs')
+const averagesMonthOutput = document.getElementById('averagesMonth')
+const averagesAllOutput = document.getElementById('averagesAll')
 const refreshLegsButton = document.getElementById('refreshLegs')
 const refreshAveragesButton = document.getElementById('refreshAverages')
 
@@ -18,14 +22,14 @@ function populateLegSelect(legs) {
 }
 
 
-function renderAverages(averages) {
+function renderAveragesInto(container, averages) {
   if (!Array.isArray(averages)) {
-    averagesOutput.textContent = JSON.stringify(averages, null, 2)
+    container.textContent = JSON.stringify(averages, null, 2)
     return
   }
 
   if (averages.length === 0) {
-    averagesOutput.textContent = 'No averages found.'
+    container.textContent = 'No averages found.'
     return
   }
 
@@ -50,8 +54,8 @@ function renderAverages(averages) {
     table.appendChild(row)
   })
 
-  averagesOutput.innerHTML = ''
-  averagesOutput.appendChild(table)
+  container.innerHTML = ''
+  container.appendChild(table)
 }
 
 class PlayerScore {
@@ -113,21 +117,65 @@ function comparePlayers(playerScoreA,playerScoreB) {
   return playerScoreB.total - playerScoreA.total;
 }
 
-function renderLegs(legs) {
+function renderWinnersInto(container, legs) {
   if (!Array.isArray(legs)) {
-    legsOutput.textContent = JSON.stringify(legs, null, 2)
-    return
-  }
-
-  if (legs.length === 0) {
-    legsOutput.textContent = 'No legs found.'
+    container.textContent = JSON.stringify(legs, null, 2)
     return
   }
 
   let playerScores = [];
+  legs.forEach((leg) => {
+    let id = leg.break ? leg.player_two : leg.player_one;
+    let name = leg.break ? leg.player_two_name : leg.player_one_name;
+    let playerScore = findPlayer(playerScores, id);
+    if (!playerScore) {
+      playerScore = new PlayerScore(id, name);
+      playerScores.push(playerScore);
+    }
+    if (leg.break) playerScore.breaksPlusOne();
+    else playerScore.straitsPlusOne();
+  })
+
+  playerScores.sort(comparePlayers);
+  const winnerTable = document.createElement('table');
+  winnerTable.classList.add('players-table');
+  const winnerHeaderRow = document.createElement('tr');
+  ['id', 'Player', 'Total', 'Breaks'].forEach((key) => {
+    const th = document.createElement('th')
+    th.textContent = key
+    winnerHeaderRow.appendChild(th)
+  })
+  winnerTable.appendChild(winnerHeaderRow);
+
+  playerScores.forEach(playerScore => {
+    const winnerRow = document.createElement('tr');
+    const values = [playerScore.id, playerScore.name, playerScore.total, playerScore.breaks]
+    values.forEach((value) => {
+      const td = document.createElement('td')
+      td.textContent = value
+      winnerRow.appendChild(td)
+    })
+    winnerTable.appendChild(winnerRow);
+  });
+
+  
+
+  container.innerHTML = '';
+  container.appendChild(winnerTable);
+}
+
+function renderLegsTableInto(container, legs) {
+  if (!Array.isArray(legs)) {
+    container.textContent = JSON.stringify(legs, null, 2)
+    return
+  }
+  if (legs.length === 0) {
+    container.textContent = 'No legs found.'
+    return
+  }
 
   const table = document.createElement('table');
-  table.classList.add('players-table');
+  table.classList.add('legs-table');
   const headerRow = document.createElement('tr');
   ['id', 'Player', 'Player', 'Start Value', 'Rounds', 'break', 'Played @'].forEach((key) => {
     const th = document.createElement('th')
@@ -147,81 +195,27 @@ function renderLegs(legs) {
       String(leg.break),
       formatDate(leg.created_at),
     ]
-    // maintain player Scores
-    let id = leg.break?leg.player_two:leg.player_one;
-    let name = leg.break?leg.player_two_name:leg.player_one_name;
-    let playerScore = findPlayer(playerScores,id);
-    if (!playerScore) {
-      playerScore = new PlayerScore(id,name);
-      playerScores.push(playerScore);
-    }
-    if (leg.break) {
-      playerScore.breaksPlusOne();
-    } else {
-      playerScore.straitsPlusOne();
-    }
-    
 
-    // color the winner green based on the value of break
     let greenColumn = leg.break ? 3 : 2;
     let column = 1;
-
     values.forEach((value) => {
       const td = document.createElement('td')
       td.textContent = value
-      if (column === greenColumn) {
-        td.classList.add("winner");
-      }
-      if (column === 4 || column === 5) {
-        td.classList.add('align-right');
-      }
-      column++;
+      if (column === greenColumn) td.classList.add('winner')
+      if (column === 4 || column === 5) td.classList.add('align-right')
+      column++
       row.appendChild(td)
     })
 
     table.appendChild(row)
   })
 
-  /* sort playerScores and create an HTML table */
-  playerScores.sort(comparePlayers);
-  const winnerTable = document.createElement('table');
-  winnerTable.classList.add('players-table');
-  const winnerHeaderRow = document.createElement('tr');
-  ['id', 'Player', 'Total', 'Breaks'].forEach((key) => {
-    const th = document.createElement('th')
-    th.textContent = key
-    winnerHeaderRow.appendChild(th)
-  })
-  winnerTable.appendChild(winnerHeaderRow);
-
-  playerScores.forEach(playerScore => {
-    const winnerRow = document.createElement('tr');
-    const values = [
-      playerScore.id,
-      playerScore.name,
-      playerScore.total,
-      playerScore.breaks
-    ]
-    values.forEach((value) => {
-      const td = document.createElement('td')
-      td.textContent = value
-      winnerRow.appendChild(td)
-    })
-
-    winnerTable.appendChild(winnerRow);
-  });
-
-  let winnerHeader = document.createElement('h2');
-  winnerHeader.textContent = "Winner";
   let detailsHeader = document.createElement('h2');
-  detailsHeader.textContent = "Details";
+  detailsHeader.textContent = 'Details';
 
-
-  legsOutput.innerHTML = '';
-  legsOutput.appendChild(winnerHeader);
-  legsOutput.appendChild(winnerTable);
-  legsOutput.appendChild(detailsHeader);
-  legsOutput.appendChild(table);
+  container.innerHTML = '';
+  container.appendChild(detailsHeader);
+  container.appendChild(table);
 }
 
 function createAverageHeaderRow(headerRow) {
@@ -236,10 +230,29 @@ function createAverageHeaderRow(headerRow) {
 
 async function loadLegs() {
   try {
-    const res = await fetch('/api/legs')
-    const data = await res.json()
-    populateLegSelect(data)
-    renderLegs(data)
+    const [allRes, monthRes] = await Promise.all([
+      fetch('/api/legs'),
+      fetch('/api/legs/month')
+    ])
+    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
+    populateLegSelect(allData)
+    // render winners in left/right containers
+    renderWinnersInto(legsWinnersMonthOutput, monthData)
+    renderWinnersInto(legsWinnersAllOutput, allData)
+
+    // render the details table; default shows month legs, can toggle to all-time
+    function updateDetails() {
+      if (showAllTimesLegsToggle && showAllTimesLegsToggle.checked) {
+        renderLegsTableInto(legsDetailsOutput, allData)
+      } else {
+        renderLegsTableInto(legsDetailsOutput, monthData)
+      }
+    }
+
+    if (showAllTimesLegsToggle) {
+      showAllTimesLegsToggle.addEventListener('change', updateDetails)
+    }
+    updateDetails()
   } catch (error) {
     console.warn('Error fetching legs:', error)
   }
@@ -247,21 +260,21 @@ async function loadLegs() {
 
 async function loadAverages() {
   try {
-    const res = await fetch('/api/player-averages')
-    const data = await res.json()
-    renderAverages(data)
+    const [allRes, monthRes] = await Promise.all([
+      fetch('/api/player-averages'),
+      fetch('/api/player-averages/month')
+    ])
+    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
+    renderAveragesInto(averagesAllOutput, allData)
+    renderAveragesInto(averagesMonthOutput, monthData)
   } catch (error) {
-    averagesOutput.textContent = `Error fetching averages: ${error}`
+    averagesAllOutput.textContent = `Error fetching averages: ${error}`
+    averagesMonthOutput.textContent = `Error fetching averages: ${error}`
   }
 }
 
-refreshLegsButton.addEventListener('click', () => {
-  loadLegs()
-})
-
-refreshAveragesButton.addEventListener('click', () => {
-  loadAverages()
-})
+refreshLegsButton.addEventListener('click', () => loadLegs())
+refreshAveragesButton.addEventListener('click', () => loadAverages())
 
 Promise.all([loadAverages(), loadLegs()]).catch((error) => {
   console.warn('Error loading initial data:', error)
