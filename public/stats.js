@@ -1,6 +1,9 @@
 const legsDetailsContainer = document.getElementById('legsDetails');
 const showAllTimesLegsToggle = document.getElementById('showAllTimesLegs');
 const detailState = { openLegId: null };
+const trainingsDetailsContainer = document.getElementById('trainingsDetails');
+const showAllTimesTrainingsToggle = document.getElementById('showAllTimesTrainings');
+const trainingDetailState = { openTrainingId: null };
 
 function formatLegDate(dateValue) {
   if (!dateValue) return '';
@@ -107,6 +110,34 @@ function buildLegDetailTable(leg, visitsForLeg) {
       previousLeftPlayerTwo = (previousLeftPlayerTwo - Number(secondVisit.value ?? 0) < 0) ? previousLeftPlayerTwo : previousLeftPlayerTwo - Number(secondVisit.value ?? 0);
     }
   }
+
+  return detailTable;
+}
+
+function buildTrainingDetailTable(training, visitsForTraining) {
+  const detailTable = document.createElement('table');
+  detailTable.style.width = '100%';
+  detailTable.style.borderCollapse = 'collapse';
+  detailTable.style.background = '#fff';
+
+  const headerRow = detailTable.insertRow();
+  ['Dart 1', 'Dart 2', 'Dart 3', 'Total', 'Left'].forEach((label) => {
+    const cell = document.createElement('th');
+    cell.textContent = label;
+    cell.style.border = '1px solid #ddd';
+    cell.style.padding = '6px';
+    cell.style.textAlign = 'center';
+    headerRow.appendChild(cell);
+  });
+
+  let previousLeft = Number(training.start_value);
+  visitsForTraining.forEach((visit) => {
+    const row = detailTable.insertRow();
+    getVisitCells(visit, previousLeft).forEach((cell) => row.appendChild(cell));
+    previousLeft = (previousLeft - Number(visit.value ?? 0) < 0)
+      ? previousLeft
+      : previousLeft - Number(visit.value ?? 0);
+  });
 
   return detailTable;
 }
@@ -228,6 +259,103 @@ function renderLegsTable(legs, visits) {
   legsDetailsContainer.appendChild(table);
 }
 
+function getTrainingVisits(training, visits) {
+  const trainingTime = new Date(training.created_at).getTime();
+  const playerVisits = (Array.isArray(visits) ? visits : [])
+    .filter((visit) => Number(visit.player_id) === Number(training.player))
+    .filter((visit) => {
+      const visitTime = new Date(visit.created_at).getTime();
+      return Number.isNaN(trainingTime) || Number.isNaN(visitTime) || visitTime <= trainingTime;
+    })
+    .sort((a, b) => Number(a.id) - Number(b.id));
+
+  return playerVisits.slice(-Number(training.rounds));
+}
+
+function renderTrainingsTable(trainings, visits) {
+  if (!trainingsDetailsContainer) return;
+  if (!Array.isArray(trainings) || trainings.length === 0) {
+    trainingsDetailsContainer.textContent = 'No trainings found.';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.classList.add('trainings-table');
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
+
+  const headerRow = table.insertRow();
+  ['id', 'Player', 'Start Value', 'Rounds', 'Played @'].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    th.style.border = '1px solid #ddd';
+    th.style.padding = '8px';
+    th.style.textAlign = 'left';
+    headerRow.appendChild(th);
+  });
+
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
+  trainings.forEach((training) => {
+    const row = document.createElement('tr');
+    const idCell = document.createElement('td');
+    idCell.textContent = training.id;
+    idCell.style.cursor = 'pointer';
+    idCell.style.textDecoration = 'underline';
+    idCell.style.color = '#0055cc';
+    idCell.style.border = '1px solid #ddd';
+    idCell.style.padding = '8px';
+    idCell.title = 'Show training details';
+
+    idCell.addEventListener('click', () => {
+      const existingDetailRow = row.parentElement.querySelector(`tr[data-detail-training-id="${training.id}"]`);
+      if (existingDetailRow) {
+        existingDetailRow.remove();
+        trainingDetailState.openTrainingId = null;
+        return;
+      }
+
+      if (trainingDetailState.openTrainingId !== null) {
+        const previousRow = row.parentElement.querySelector(`tr[data-detail-training-id="${trainingDetailState.openTrainingId}"]`);
+        if (previousRow) previousRow.remove();
+      }
+
+      trainingDetailState.openTrainingId = training.id;
+      const detailRow = document.createElement('tr');
+      detailRow.dataset.detailTrainingId = String(training.id);
+
+      const detailCell = document.createElement('td');
+      detailCell.colSpan = 5;
+      detailCell.style.border = '1px solid #ddd';
+      detailCell.style.padding = '12px';
+      detailCell.style.background = '#fafafa';
+      detailCell.appendChild(buildTrainingDetailTable(training, getTrainingVisits(training, visits)));
+      detailRow.appendChild(detailCell);
+      row.after(detailRow);
+    });
+    row.appendChild(idCell);
+
+    [
+      training.player_name,
+      training.start_value,
+      training.rounds,
+      formatLegDate(training.created_at),
+    ].forEach((value) => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      cell.style.border = '1px solid #ddd';
+      cell.style.padding = '8px';
+      row.appendChild(cell);
+    });
+
+    tbody.appendChild(row);
+  });
+
+  trainingsDetailsContainer.innerHTML = '';
+  trainingsDetailsContainer.appendChild(table);
+}
+
 async function loadLegDetails() {
   try {
     const showAllTimes = !!(showAllTimesLegsToggle && showAllTimesLegsToggle.checked);
@@ -251,6 +379,29 @@ async function loadLegDetails() {
   }
 }
 
+async function loadTrainingDetails() {
+  try {
+    const showAllTimes = !!(showAllTimesTrainingsToggle && showAllTimesTrainingsToggle.checked);
+    const trainingsEndpoint = showAllTimes ? '/api/trainings' : '/api/trainings/month';
+    const [trainingsResponse, visitsResponse] = await Promise.all([
+      fetch(trainingsEndpoint),
+      fetch('/api/visits')
+    ]);
+
+    if (!trainingsResponse.ok || !visitsResponse.ok) {
+      throw new Error('Unable to load training details');
+    }
+
+    const trainings = await trainingsResponse.json();
+    const visits = await visitsResponse.json();
+    renderTrainingsTable(trainings, visits);
+  } catch (error) {
+    if (trainingsDetailsContainer) {
+      trainingsDetailsContainer.textContent = `Error loading training details: ${error.message}`;
+    }
+  }
+}
+
 if (document.getElementById('legsDetails')) {
   if (showAllTimesLegsToggle) {
     showAllTimesLegsToggle.addEventListener('change', () => {
@@ -259,4 +410,21 @@ if (document.getElementById('legsDetails')) {
     });
   }
   loadLegDetails();
+}
+
+if (document.getElementById('trainingsDetails')) {
+  if (showAllTimesTrainingsToggle) {
+    showAllTimesTrainingsToggle.addEventListener('change', () => {
+      trainingDetailState.openTrainingId = null;
+      loadTrainingDetails();
+    });
+  }
+  const refreshTrainingsButton = document.getElementById('refreshTrainings');
+  if (refreshTrainingsButton) {
+    refreshTrainingsButton.addEventListener('click', () => {
+      trainingDetailState.openTrainingId = null;
+      loadTrainingDetails();
+    });
+  }
+  loadTrainingDetails();
 }

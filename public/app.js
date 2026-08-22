@@ -1,31 +1,109 @@
-import { formatDate } from './common.js'
-
+const output = document.getElementById('output')
+const visitsOutput = document.getElementById('visitsOutput')
+const averagesOutput = document.getElementById('averagesOutput')
+const refreshButton = document.getElementById('refresh')
+const refreshVisitsButton = document.getElementById('refreshVisits')
+const refreshAveragesButton = document.getElementById('refreshAverages')
+const refreshLegsButton = document.getElementById('refreshLegs')
 const legsWinnersMonthOutput = document.getElementById('legsWinnersMonth')
 const legsWinnersAllOutput = document.getElementById('legsWinnersAll')
-const legsDetailsOutput = document.getElementById('legsDetails')
-const showAllTimesLegsToggle = document.getElementById('showAllTimesLegs')
 const averagesMonthOutput = document.getElementById('averagesMonth')
 const averagesAllOutput = document.getElementById('averagesAll')
-const refreshLegsButton = document.getElementById('refreshLegs')
-const refreshAveragesButton = document.getElementById('refreshAverages')
-const showAllTimesTrainingsToggle = document.getElementById('showAllTimesTrainings')
-const refreshTrainingsButton = document.getElementById('refreshTrainings')
-const trainingsDetailsOutput = document.getElementById('trainingsDetails')
+const form = document.getElementById('playerForm')
+const visitForm = document.getElementById('visitForm')
+const playerSelect = document.getElementById('player')
 
-function populateLegSelect(legs) {
-  const legSelect = document.getElementById('leg')
-  if (!legSelect) return
-  legSelect.innerHTML = '<option value="">(No leg)</option>'
-  legs.forEach((l) => {
+function renderPlayers(players) {
+  if (!Array.isArray(players)) {
+    output.textContent = JSON.stringify(players, null, 2)
+    return
+  }
+
+  // Populate the player select dropdown (used for creating visits)
+  populatePlayerSelect(players)
+
+  // Render as a table
+  if (players.length === 0) {
+    output.textContent = 'No players found.'
+    return
+  }
+
+  const table = document.createElement('table')
+  table.classList.add('players-table')
+  const headerRow = document.createElement('tr')
+
+  createPlayerHeaderRow(headerRow)
+  table.appendChild(headerRow)
+
+  players.forEach((player) => {
+    const row = document.createElement('tr')
+    let col = 0;
+    Object.values(player).forEach((value) => {
+      const td = document.createElement('td');
+      td.textContent = value;
+      if (col === 3) { // Assuming 'score' is the 4th column (index 3)
+        td.classList.add('align-right')
+      }
+      row.appendChild(td);
+      col++
+    })
+    table.appendChild(row)
+  })
+
+  output.innerHTML = ''
+  output.appendChild(table)
+}
+
+function populatePlayerSelect(players) {
+  if (!playerSelect) return
+  playerSelect.innerHTML = '<option value="">(Choose a player)</option>'
+  players.forEach((p) => {
     const option = document.createElement('option')
-    option.value = l.id
-    option.textContent = `#${l.id}: ${l.player_one_name} vs ${l.player_two_name} (${l.rounds} rounds)`
-    legSelect.appendChild(option)
+    option.value = p.id
+    option.textContent = p.name
+    playerSelect.appendChild(option)
   })
 }
 
+function renderVisits(visits) {
+  if (!Array.isArray(visits)) {
+    visitsOutput.textContent = JSON.stringify(visits, null, 2)
+    return
+  }
 
-function renderAveragesInto(container, averages) {
+  if (visits.length === 0) {
+    visitsOutput.textContent = 'No visits found.'
+    return
+  }
+
+  const table = document.createElement('table')
+  table.classList.add('players-table')
+  const headerRow = document.createElement('tr')
+  createVisitHeaderRow(headerRow)
+  table.appendChild(headerRow)
+
+  visits.forEach((visit) => {
+    const row = document.createElement('tr');
+    const values = [visit.id, visit.player_name, visit.value, visit.created_at];
+    let col = 0;
+    values.forEach((value) => {
+      const td = document.createElement('td')
+      td.textContent = value
+      if (col === 2) { // Assuming 'value' is the 3rd column (index 2)
+        td.classList.add('align-right');
+      }
+      row.appendChild(td);
+      col++;
+    })
+    table.appendChild(row)
+  })
+
+  visitsOutput.innerHTML = ''
+  visitsOutput.appendChild(table)
+}
+
+function renderAverages(averages, container = averagesOutput) {
+  if (!container) return
   if (!Array.isArray(averages)) {
     container.textContent = JSON.stringify(averages, null, 2)
     return
@@ -61,164 +139,22 @@ function renderAveragesInto(container, averages) {
   container.appendChild(table)
 }
 
-class PlayerScore {
-  #id;
-  #name;
-  #breaks = 0;
-  #straits = 0;
-  constructor(id,name) {
-    this.#id = id;
-    this.#name = name;
-  }
-  get id() {
-    return this.#id;
-  }
-  get name() {
-    return this.#name;
-  }
-  get total() {
-    return this.#breaks + this.#straits;
-  }
-  get breaks() {
-    return this.#breaks;
-  }
-  get straits() {
-    return this.#straits;
-  }
-  
-  breaksPlusOne() {
-    this.#breaks++;
-  }
-
-  straitsPlusOne() {
-    this.#straits++;
-  }
-
-}
-
-/* 
-  playerScores: an array of PlayerScore objects
-    the functions searches for PlayerScore 
-  id: to be searched in the array
-  returns
-    undefined if the id was not found
-    an object of type PlayerScore with the given id
-*/
-function findPlayer(playerScores,id) {
-  if (!Array.isArray(playerScores)) 
-    return undefined;
-
-  for (let i=0;i<playerScores.length;i++) {
-    if (playerScores[i].id === id)
-      return playerScores[i];
-  }
-  
-  return undefined;
-}
-
-function comparePlayers(playerScoreA,playerScoreB) {
-  return playerScoreB.total - playerScoreA.total;
-}
-
-function renderWinnersInto(container, legs) {
-  if (!Array.isArray(legs)) {
-    container.textContent = JSON.stringify(legs, null, 2)
-    return
-  }
-
-  let playerScores = [];
-  legs.forEach((leg) => {
-    let id = leg.break ? leg.player_two : leg.player_one;
-    let name = leg.break ? leg.player_two_name : leg.player_one_name;
-    let playerScore = findPlayer(playerScores, id);
-    if (!playerScore) {
-      playerScore = new PlayerScore(id, name);
-      playerScores.push(playerScore);
-    }
-    if (leg.break) playerScore.breaksPlusOne();
-    else playerScore.straitsPlusOne();
-  })
-
-  playerScores.sort(comparePlayers);
-  const winnerTable = document.createElement('table');
-  winnerTable.classList.add('players-table');
-  const winnerHeaderRow = document.createElement('tr');
-  ['id', 'Player', 'Total', 'Breaks'].forEach((key) => {
-    const th = document.createElement('th')
-    th.textContent = key
-    winnerHeaderRow.appendChild(th)
-  })
-  winnerTable.appendChild(winnerHeaderRow);
-
-  playerScores.forEach(playerScore => {
-    const winnerRow = document.createElement('tr');
-    const values = [playerScore.id, playerScore.name, playerScore.total, playerScore.breaks]
-    values.forEach((value) => {
-      const td = document.createElement('td')
-      td.textContent = value
-      winnerRow.appendChild(td)
-    })
-    winnerTable.appendChild(winnerRow);
-  });
-
-  
-
-  container.innerHTML = '';
-  container.appendChild(winnerTable);
-}
-
-function renderLegsTableInto(container, legs) {
-  if (!Array.isArray(legs)) {
-    container.textContent = JSON.stringify(legs, null, 2)
-    return
-  }
-  if (legs.length === 0) {
-    container.textContent = 'No legs found.'
-    return
-  }
-
-  const table = document.createElement('table');
-  table.classList.add('legs-table');
-  const headerRow = document.createElement('tr');
-  ['id', 'Player', 'Player', 'Start Value', 'Rounds', 'break', 'Played @'].forEach((key) => {
+function createPlayerHeaderRow(headerRow) {
+  ['id', 'name', 'email', 'score', 'created_at'].forEach((key) => {
     const th = document.createElement('th')
     th.textContent = key
     headerRow.appendChild(th)
   })
-  table.appendChild(headerRow)
+  return headerRow
+}
 
-  legs.forEach((leg) => {
-    const row = document.createElement('tr')
-    const values = [
-      leg.id,
-      leg.player_one_name,
-      leg.player_two_name,
-      leg.start_value,
-      leg.rounds,
-      String(leg.break),
-      formatDate(leg.created_at),
-    ]
-
-    let greenColumn = leg.break ? 3 : 2;
-    let column = 1;
-    values.forEach((value) => {
-      const td = document.createElement('td')
-      td.textContent = value
-      if (column === greenColumn) td.classList.add('winner')
-      if (column === 4 || column === 5) td.classList.add('align-right')
-      column++
-      row.appendChild(td)
-    })
-
-    table.appendChild(row)
+function createVisitHeaderRow(headerRow) {
+  ['id', 'player_name', 'value', 'created_at'].forEach((key) => {
+    const th = document.createElement('th')
+    th.textContent = key
+    headerRow.appendChild(th)
   })
-
-  let detailsHeader = document.createElement('h2');
-  detailsHeader.textContent = 'Details';
-
-  container.innerHTML = '';
-  container.appendChild(detailsHeader);
-  container.appendChild(table);
+  return headerRow
 }
 
 function createAverageHeaderRow(headerRow) {
@@ -231,130 +167,215 @@ function createAverageHeaderRow(headerRow) {
   return headerRow
 }
 
-function renderTrainingsTableInto(container, trainings) {
-  if (!Array.isArray(trainings)) {
-    container.textContent = JSON.stringify(trainings, null, 2)
-    return
+async function loadPlayers() {
+  try {
+    const res = await fetch('/api/players')
+    const data = await res.json()
+    renderPlayers(data)
+  } catch (error) {
+    output.textContent = `Error fetching players: ${error}`
   }
-  if (trainings.length === 0) {
-    container.textContent = 'No trainings found.'
-    return
-  }
-
-  const table = document.createElement('table');
-  table.classList.add('legs-table');
-  const headerRow = document.createElement('tr');
-  ['id', 'Player', 'Start Value', 'Rounds', 'Player @'].forEach((key) => {
-    const th = document.createElement('th')
-    th.textContent = key
-    headerRow.appendChild(th)
-  })
-  table.appendChild(headerRow)
-
-  trainings.forEach((t) => {
-    const row = document.createElement('tr')
-    const values = [
-      t.id,
-      t.player_name || t.player || '',
-      t.start_value,
-      t.rounds,
-      formatDate(t.created_at),
-    ]
-
-    let column = 1;
-    values.forEach((value) => {
-      const td = document.createElement('td')
-      td.textContent = value
-      if (column === 3 || column === 4) td.classList.add('align-right')
-      column++
-      row.appendChild(td)
-    })
-
-    table.appendChild(row)
-  })
-
-  let detailsHeader = document.createElement('h2');
-  detailsHeader.textContent = 'Details';
-
-  container.innerHTML = '';
-  container.appendChild(detailsHeader);
-  container.appendChild(table);
 }
 
-async function loadLegs() {
+async function loadVisits() {
   try {
-    const [allRes, monthRes] = await Promise.all([
-      fetch('/api/legs'),
-      fetch('/api/legs/month')
-    ])
-    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
-    populateLegSelect(allData)
-    // render winners in left/right containers
-    renderWinnersInto(legsWinnersMonthOutput, monthData)
-    renderWinnersInto(legsWinnersAllOutput, allData)
-
-    // render the details table; default shows month legs, can toggle to all-time
-    function updateDetails() {
-      if (showAllTimesLegsToggle && showAllTimesLegsToggle.checked) {
-        renderLegsTableInto(legsDetailsOutput, allData)
-      } else {
-        renderLegsTableInto(legsDetailsOutput, monthData)
-      }
-    }
-
-    if (showAllTimesLegsToggle) {
-      showAllTimesLegsToggle.addEventListener('change', updateDetails)
-    }
-    updateDetails()
+    const res = await fetch('/api/visits')
+    const data = await res.json()
+    renderVisits(data)
   } catch (error) {
-    console.warn('Error fetching legs:', error)
+    visitsOutput.textContent = `Error fetching visits: ${error}`
   }
 }
 
 async function loadAverages() {
   try {
-    const [allRes, monthRes] = await Promise.all([
+    const res = await fetch('/api/player-averages')
+    const data = await res.json()
+    renderAverages(data)
+  } catch (error) {
+    averagesOutput.textContent = `Error fetching averages: ${error}`
+  }
+}
+
+async function loadStatsAverages() {
+  try {
+    const [allResponse, monthResponse] = await Promise.all([
       fetch('/api/player-averages'),
       fetch('/api/player-averages/month')
     ])
-    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
-    renderAveragesInto(averagesAllOutput, allData)
-    renderAveragesInto(averagesMonthOutput, monthData)
-  } catch (error) {
-    averagesAllOutput.textContent = `Error fetching averages: ${error}`
-    averagesMonthOutput.textContent = `Error fetching averages: ${error}`
-  }
-}
+    if (!allResponse.ok || !monthResponse.ok) throw new Error('Unable to load averages')
 
-refreshLegsButton.addEventListener('click', () => loadLegs())
-refreshAveragesButton.addEventListener('click', () => loadAverages())
-refreshTrainingsButton && refreshTrainingsButton.addEventListener('click', () => loadTrainings())
-
-async function loadTrainings() {
-  try {
-    const [allRes, monthRes] = await Promise.all([
-      fetch('/api/trainings'),
-      fetch('/api/trainings/month')
+    const [allAverages, monthAverages] = await Promise.all([
+      allResponse.json(),
+      monthResponse.json()
     ])
-    const [allData, monthData] = await Promise.all([allRes.json(), monthRes.json()])
-
-    function updateDetails() {
-      if (showAllTimesTrainingsToggle && showAllTimesTrainingsToggle.checked) {
-        renderTrainingsTableInto(trainingsDetailsOutput, allData)
-      } else {
-        renderTrainingsTableInto(trainingsDetailsOutput, monthData)
-      }
-    }
-
-    if (showAllTimesTrainingsToggle) {
-      showAllTimesTrainingsToggle.addEventListener('change', updateDetails)
-    }
-    updateDetails()
+    renderAverages(allAverages, averagesAllOutput)
+    renderAverages(monthAverages, averagesMonthOutput)
   } catch (error) {
-    console.warn('Error fetching trainings:', error)
+    if (averagesAllOutput) averagesAllOutput.textContent = `Error loading averages: ${error.message}`
+    if (averagesMonthOutput) averagesMonthOutput.textContent = `Error loading averages: ${error.message}`
   }
 }
 
-Promise.all([loadAverages(), loadLegs(), loadTrainings()]).catch((error) => {
-  console.warn('Error loading initial data:', error)
+function renderWinners(container, legs) {
+  if (!container) return
+
+  const scores = new Map()
+  legs.forEach((leg) => {
+    const playerId = leg.break ? leg.player_two : leg.player_one
+    const playerName = leg.break ? leg.player_two_name : leg.player_one_name
+    const score = scores.get(playerId) || { id: playerId, name: playerName, total: 0, breaks: 0 }
+    score.total += 1
+    if (leg.break) score.breaks += 1
+    scores.set(playerId, score)
+  })
+
+  const table = document.createElement('table')
+  table.classList.add('players-table')
+  const headerRow = document.createElement('tr')
+  ;['id', 'Player', 'Total', 'Breaks'].forEach((label) => {
+    const th = document.createElement('th')
+    th.textContent = label
+    headerRow.appendChild(th)
+  })
+  table.appendChild(headerRow)
+
+  Array.from(scores.values())
+    .sort((a, b) => b.total - a.total)
+    .forEach((score) => {
+      const row = document.createElement('tr')
+      ;[score.id, score.name, score.total, score.breaks].forEach((value) => {
+        const cell = document.createElement('td')
+        cell.textContent = value
+        row.appendChild(cell)
+      })
+      table.appendChild(row)
+    })
+
+  container.innerHTML = ''
+  container.appendChild(table)
+}
+
+async function loadStatsWinners() {
+  try {
+    const [allResponse, monthResponse] = await Promise.all([
+      fetch('/api/legs'),
+      fetch('/api/legs/month')
+    ])
+    if (!allResponse.ok || !monthResponse.ok) throw new Error('Unable to load leg winners')
+
+    const [allLegs, monthLegs] = await Promise.all([
+      allResponse.json(),
+      monthResponse.json()
+    ])
+    renderWinners(legsWinnersAllOutput, allLegs)
+    renderWinners(legsWinnersMonthOutput, monthLegs)
+  } catch (error) {
+    if (legsWinnersAllOutput) legsWinnersAllOutput.textContent = `Error loading winners: ${error.message}`
+    if (legsWinnersMonthOutput) legsWinnersMonthOutput.textContent = `Error loading winners: ${error.message}`
+  }
+}
+
+async function addPlayer(player) {
+  const res = await fetch('/api/players', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(player),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || res.statusText)
+  }
+
+  return res.json()
+}
+
+async function addVisit(visit) {
+  const res = await fetch('/api/visits', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(visit),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || res.statusText)
+  }
+
+  return res.json()
+}
+
+if (form) form.addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  const formData = new FormData(form)
+  const player = {
+    name: formData.get('name'),
+    email: formData.get('email'),
+    score: Number(formData.get('score')),
+  }
+
+  try {
+    const newPlayer = await addPlayer(player)
+    output.textContent = `Inserted:
+${JSON.stringify(newPlayer, null, 2)}`
+    form.reset()
+    await loadPlayers()
+  } catch (error) {
+    output.textContent = `Error inserting player: ${error.message}`
+  }
 })
+
+if (visitForm) visitForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  const formData = new FormData(visitForm)
+  const playerId = Number(formData.get('player'))
+  const dart1 = Number(formData.get('dart1'))
+  const dart2 = Number(formData.get('dart2'))
+  const dart3 = Number(formData.get('dart3'))
+  const value = dart1 + dart2 + dart3
+
+  const visit = {
+    player_id: playerId,
+    value,
+  }
+
+  try {
+    const newVisit = await addVisit(visit)
+    visitsOutput.textContent = `Inserted:
+${JSON.stringify(newVisit, null, 2)}`
+    visitForm.reset()
+    await loadVisits()
+  } catch (error) {
+    visitsOutput.textContent = `Error inserting visit: ${error.message}`
+  }
+})
+
+if (refreshButton) refreshButton.addEventListener('click', () => {
+  loadPlayers()
+})
+
+if (refreshVisitsButton) refreshVisitsButton.addEventListener('click', () => {
+  loadVisits()
+})
+
+if (refreshAveragesButton) refreshAveragesButton.addEventListener('click', () => {
+  if (averagesMonthOutput || averagesAllOutput) loadStatsAverages()
+  else loadAverages()
+})
+
+if (refreshLegsButton) refreshLegsButton.addEventListener('click', () => {
+  loadStatsWinners()
+})
+
+if (output || form) loadPlayers()
+if (visitsOutput || visitForm) loadVisits()
+if (averagesOutput) loadAverages()
+if (averagesMonthOutput || averagesAllOutput) loadStatsAverages()
+if (legsWinnersAllOutput || legsWinnersMonthOutput) loadStatsWinners()

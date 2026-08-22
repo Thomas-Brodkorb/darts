@@ -21,14 +21,15 @@
 
     const dataMap = new Map()
     data.forEach(row => {
-      dataMap.set(`${row.name}|${row.yearweek}`, Number(row.value))
+      const value = Number(row.value)
+      dataMap.set(`${row.name}|${row.yearweek}`, Number.isFinite(value) ? value : null)
     })
 
     const datasets = playerNames.map(name => ({
       label: name,
       data: labels.map((yearweek) => {
         const value = dataMap.get(`${name}|${yearweek}`)
-        return { x: yearweek, y: value === undefined ? null : value }
+        return { x: yearweek, y: value === undefined || value === null ? null : value }
       })
     }))
 

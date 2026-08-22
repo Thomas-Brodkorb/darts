@@ -341,15 +341,18 @@ saveLegButton.addEventListener('click', async () => {
     visits: [],
   }
 
-  // create one visit per player per round
-  currentLeg.players.forEach((trainingPlayer) => {
-    trainingPlayer.roundsData.forEach((roundData) => {
-      payload.visits.push({
-        player_id: trainingPlayer.player.id,
-        darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
-      })
+  // Keep database IDs in the same order as the rounds shown in the table.
+  for (let roundIndex = 0; roundIndex < currentLeg.rounds; roundIndex += 1) {
+    currentLeg.players.forEach((player) => {
+      const roundData = player.roundsData[roundIndex]
+      if (roundData) {
+        payload.visits.push({
+          player_id: player.player.id,
+          darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
+        })
+      }
     })
-  })
+  }
 
   try {
     const res = await fetch('/api/legs', {

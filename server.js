@@ -56,7 +56,7 @@ app.get('/api/visits', async (req, res) => {
       from Visits v
       join Players p on p.id = v.player_id
       left join Legs l on l.id = v.leg_id
-      order by v.created_at desc
+      order by v.id asc
     `
 
     // For visits where the detailed darts are stored (value = -1) fetch darts, reconstruct Dart/Visit and compute value
@@ -102,11 +102,24 @@ app.get('/api/visits', async (req, res) => {
 app.get('/api/visit-averages', async (req, res) => {
   try {
     const averages = await sql`
+      with visit_values as (
+        select
+          v.id,
+          v.player_id,
+          v.created_at,
+          case when v.value = -1
+            then coalesce(sum(d.single_value * d.factor), 0)
+            else v.value
+          end as value
+        from Visits v
+        left join Darts d on d.visit = v.id
+        group by v.id
+      )
       select
         concat(date_part('year', v.created_at), ' ', date_part('week', v.created_at)) as yearweek,
         p.name,
         avg(v.value) as value
-      from Visits v
+      from visit_values v
       join Players p on p.id = v.player_id
       group by concat(date_part('year', v.created_at), ' ', date_part('week', v.created_at)), p.name
       order by min(v.created_at) asc, p.name asc
@@ -311,11 +324,24 @@ app.post('/api/legs', async (req, res) => {
 app.get('/api/player-averages', async (req, res) => {
   try {
     const averages = await sql`
+      with visit_values as (
+        select
+          v.id,
+          v.player_id,
+          v.created_at,
+          case when v.value = -1
+            then coalesce(sum(d.single_value * d.factor), 0)
+            else v.value
+          end as value
+        from Visits v
+        left join Darts d on d.visit = v.id
+        group by v.id
+      )
       select
         p.name as player_name,
         avg(v.value) as average_value
       from Players p
-      join Visits v on v.player_id = p.id
+      join visit_values v on v.player_id = p.id
       group by p.name
       order by average_value desc
     `
@@ -330,10 +356,23 @@ app.get('/api/player-averages', async (req, res) => {
 app.get('/api/player-averages/month', async (req, res) => {
   try {
     const averages = await sql`
+      with visit_values as (
+        select
+          v.id,
+          v.player_id,
+          v.created_at,
+          case when v.value = -1
+            then coalesce(sum(d.single_value * d.factor), 0)
+            else v.value
+          end as value
+        from Visits v
+        left join Darts d on d.visit = v.id
+        group by v.id
+      )
       select
         p.name as player_name,
         avg(v.value) as average_value
-      from Visits v
+      from visit_values v
       join Players p on p.id = v.player_id
       where date_trunc('month', v.created_at) = date_trunc('month', now())
       group by p.name

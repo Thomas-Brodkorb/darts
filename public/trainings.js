@@ -296,31 +296,30 @@ async function saveTrainings() {
   if (!currentTraining) return
 
   const visits = []
-  currentTraining.players.forEach((trainingPlayer) => {
-    trainingPlayer.roundsData.forEach((roundData) => {
-      const visitPayload = {
-        player_id: trainingPlayer.player.id,
-        darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
+  for (let roundIndex = 0; roundIndex < currentTraining.rounds; roundIndex += 1) {
+    currentTraining.players.forEach((trainingPlayer) => {
+      const roundData = trainingPlayer.roundsData[roundIndex]
+      if (roundData) {
+        visits.push({
+          player_id: trainingPlayer.player.id,
+          darts: roundData.visit.darts.map(d => d ? d.toString() : null).filter(x => x !== null)
+        })
       }
-      visits.push(visitPayload)
     })
-  })
+  }
 
   try {
-    await Promise.all(
-      visits.map((visit) =>
-        fetch('/api/visits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(visit),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}))
-            throw new Error(err.error || res.statusText)
-          }
-        })
-      )
-    )
+    for (const visit of visits) {
+      const response = await fetch('/api/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visit),
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || response.statusText)
+      }
+    }
 
     // after visits stored, store trainings per player
     const trainings = currentTraining.players.map(tp => ({
