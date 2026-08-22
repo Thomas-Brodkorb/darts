@@ -36,3 +36,12 @@ CREATE TABLE IF NOT EXISTS Darts (
   factor integer NOT NULL,
   visit integer NOT NULL references Visits(id) on delete cascade
 );
+
+-- Table to store trainings per player
+CREATE TABLE IF NOT EXISTS Trainings (
+  id serial PRIMARY KEY,
+  player integer NOT NULL references Players(id) on delete cascade,
+  rounds integer NOT NULL,
+  start_value integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);

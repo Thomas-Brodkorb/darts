@@ -322,6 +322,23 @@ async function saveTrainings() {
       )
     )
 
+    // after visits stored, store trainings per player
+    const trainings = currentTraining.players.map(tp => ({
+      player_id: tp.player.id,
+      rounds: tp.roundsData.length,
+      start_value: currentTraining.startValue
+    }))
+
+    const tRes = await fetch('/api/trainings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(trainings),
+    })
+    if (!tRes.ok) {
+      const err = await tRes.json().catch(() => ({}))
+      throw new Error(err.error || tRes.statusText)
+    }
+
     alert('Training saved! You can now start a new training.')
     resetTraining()
   } catch (error) {

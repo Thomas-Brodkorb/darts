@@ -308,6 +308,39 @@ app.get('/api/player-averages', async (req, res) => {
   }
 })
 
+// Trainings: store training sessions per player
+app.post('/api/trainings', async (req, res) => {
+  try {
+    const trainingData = req.body
+    // accept either a single training or an array
+    if (Array.isArray(trainingData)) {
+      const inserted = await sql.begin(async (tx) => {
+        const results = []
+        for (const t of trainingData) {
+          const [row] = await tx`
+            insert into Trainings ${sql({ player: t.player_id, rounds: t.rounds, start_value: t.start_value })}
+            returning *
+          `
+          results.push(row)
+        }
+        return results
+      })
+      res.status(201).json(inserted)
+      return
+    }
+
+    const inserted = await sql`
+      insert into Trainings ${sql({ player: trainingData.player_id, rounds: trainingData.rounds, start_value: trainingData.start_value })}
+      returning *
+    `
+
+    res.status(201).json(inserted[0])
+  } catch (error) {
+    console.error('POST /api/trainings error:', error)
+    res.status(500).json({ error: 'Unable to insert trainings' })
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Server listening at http://localhost:${PORT}`)
 })
