@@ -25,9 +25,9 @@
 
     <main class="main-content">
       <h1>Stats</h1>
-      <section>
-        
-        <h2>Average visits</h2>
+
+      <details open>
+        <summary style="font-size: 1.5em; font-weight: bold; cursor: pointer; margin: 0.83em 0;">Average visits</summary>
         <div class="panel">
           <div class="two-columns">
             <div id="averagesMonthContainer">
@@ -42,12 +42,10 @@
           <canvas id="visits"></canvas>
           <div style="margin-top:8px;"><button id="refreshAverages">Refresh</button></div>
         </div>
-      </section>
+      </details>
 
-
-
-      <section>
-        <h2>Legs</h2>
+      <details open>
+        <summary style="font-size: 1.5em; font-weight: bold; cursor: pointer; margin: 0.83em 0;">Legs</summary>
         <div class="panel">
           <h3>Winners</h3>
           <div class="two-columns">
@@ -69,10 +67,10 @@
           </div>
           <div id="legsDetails" style="margin-top:12px;">Loading…</div>
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2>Trainings</h2>
+      <details open>
+        <summary style="font-size: 1.5em; font-weight: bold; cursor: pointer; margin: 0.83em 0;">Trainings</summary>
         <div class="panel">
           <div style="margin-top:8px; display:flex; gap:12px; align-items:center;">
             <label style="display:flex; gap:6px; align-items:center;">
@@ -83,7 +81,7 @@
           </div>
           <div id="trainingsDetails" style="margin-top:12px;">Loading…</div>
         </div>
-      </section>
+      </details>
     </main>
   </div>
 
