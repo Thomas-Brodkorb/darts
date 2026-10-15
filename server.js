@@ -34,7 +34,7 @@ app.post('/api/players', async (req, res) => {
 
     // IMPORTANT: Adjust this to match your table columns.
     // If your table is called Players and has columns (name, email, score) you can send those keys.
-    // Here we let postgres.js generate an INSERT statement from an object.
+    // Let the database client generate an INSERT statement from an object.
     const inserted = await sql`
       insert into Players ${sql(playerData)}
       returning *
