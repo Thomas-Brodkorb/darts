@@ -1,13 +1,51 @@
 import express from 'express'
 import cors from 'cors'
+import { timingSafeEqual } from 'node:crypto'
 import sql from './db.js'
 import { Dart } from './public/Dart.js'
 import { Visit } from './public/Visit.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const authUsername = process.env.BASIC_AUTH_USERNAME
+const authPassword = process.env.BASIC_AUTH_PASSWORD
+
+if (!authUsername || !authPassword) {
+  throw new Error('Set BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD before starting the server')
+}
+
+function matchesCredential(supplied, configured) {
+  const suppliedBuffer = Buffer.from(supplied)
+  const configuredBuffer = Buffer.from(configured)
+  return suppliedBuffer.length === configuredBuffer.length &&
+    timingSafeEqual(suppliedBuffer, configuredBuffer)
+}
 
 app.use(cors())
+app.use((req, res, next) => {
+  const authorization = req.headers.authorization
+  const match = authorization?.match(/^Basic ([A-Za-z0-9+/]+={0,2})$/)
+
+  if (match) {
+    const decoded = Buffer.from(match[1], 'base64').toString('utf8')
+    const separator = decoded.indexOf(':')
+
+    if (separator !== -1) {
+      const username = decoded.slice(0, separator)
+      const password = decoded.slice(separator + 1)
+      const validUsername = matchesCredential(username, authUsername)
+      const validPassword = matchesCredential(password, authPassword)
+
+      if (validUsername && validPassword) {
+        next()
+        return
+      }
+    }
+  }
+
+  res.set('WWW-Authenticate', 'Basic realm="Darts", charset="UTF-8"')
+  res.status(401).send('Authentication required')
+})
 app.use(express.json())
 
 // Serve the HTML + JS files from the public folder

@@ -38,7 +38,16 @@ This project demonstrates a simple full-stack flow:
 
    `DATABASE_URL` can be used instead of the individual PostgreSQL settings. Do not commit passwords; set these variables in your shell or local environment.
 
-4. Start the server with `npm start` and open `http://localhost:3000`.
+4. Configure HTTP Basic Authentication. Both settings are required:
+
+   ```bash
+   export BASIC_AUTH_USERNAME=Brodkorb
+   export BASIC_AUTH_PASSWORD=your-chosen-password
+   ```
+
+   Keep the password out of source control. Basic Authentication should only be used over HTTPS when accessing the app over a network.
+
+5. Start the server with `npm start` and open `http://localhost:3000`. Your browser will prompt you for the username and password.
 
 ### API endpoints
 
